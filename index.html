@@ -1,0 +1,2741 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Carnet de trafic</title>
+<meta name="theme-color" content="#FFFFFF">
+<meta name="description" content="Carnet de trafic CB et radioamateur : saisie rapide des QSO, fiche station, carte et vidéo.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="Carnet">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="application-name" content="Carnet de trafic">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#EBEFF3; --surface:#FFFFFF; --sunk:#F3F6F8; --ink:#14202B; --muted:#596876; --line:#D2DAE1; --line2:#E3E8ED;
+  --accent:#0B7A62; --accent-ink:#FFFFFF; --accent-soft:#DFF2EB;
+  --warn:#9A5800; --warn-bg:#FFF1DA; --bad:#B3261E; --bad-bg:#FCE7E5; --rec:#D92D20;
+  --land:#DCE4EA; --landline:#B9C6D0; --landhi:#CBD6DE; --pin2:#2F6FB5; --sea:#F4F7F9;
+  --shadow:0 1px 2px rgba(20,32,43,.06),0 4px 16px rgba(20,32,43,.05);
+  --sans:"Barlow",system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"SF Mono",Menlo,Consolas,monospace;
+  --navh:0px;
+  color-scheme:light;
+  box-sizing:border-box;
+  padding-top:env(safe-area-inset-top,0px);
+  padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0D141B; --surface:#152029; --sunk:#101921; --ink:#E3EAF0; --muted:#93A2AF; --line:#26343F; --line2:#1E2B35;
+    --accent:#3CC9A6; --accent-ink:#04201A; --accent-soft:#103A30;
+    --warn:#F2B04A; --warn-bg:#3A2A10; --bad:#FF8F85; --bad-bg:#3D1916; --rec:#FF5A4E;
+    --land:#22313D; --landline:#33475A; --landhi:#2B3D4C; --pin2:#6FA8E8; --sea:#101921;
+    --shadow:0 1px 2px rgba(0,0,0,.3);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0D141B; --surface:#152029; --sunk:#101921; --ink:#E3EAF0; --muted:#93A2AF; --line:#26343F; --line2:#1E2B35;
+  --accent:#3CC9A6; --accent-ink:#04201A; --accent-soft:#103A30;
+  --warn:#F2B04A; --warn-bg:#3A2A10; --bad:#FF8F85; --bad-bg:#3D1916; --rec:#FF5A4E;
+  --land:#22313D; --landline:#33475A; --landhi:#2B3D4C; --pin2:#6FA8E8; --sea:#101921;
+  --shadow:0 1px 2px rgba(0,0,0,.3);
+  color-scheme:dark;
+}
+html{scroll-padding-top:calc(env(safe-area-inset-top,0px) + 70px);-webkit-text-size-adjust:100%;text-size-adjust:100%}
+*,*::before,*::after{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 var(--sans);-webkit-tap-highlight-color:transparent;transition:background-color .2s,color .2s}
+@media (prefers-reduced-motion:reduce){body{transition:none}}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:30;background:var(--surface)}
+button,input,select,textarea{font:inherit;color:inherit}
+button,label.btn,.menu [role=menuitem]{touch-action:manipulation}
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.mono{font-family:var(--mono);font-feature-settings:"zero" 1}
+[hidden]{display:none !important}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+
+/* ---------- En-tête ---------- */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:20;background:var(--surface);border-bottom:1px solid var(--line);
+  display:flex;align-items:center;gap:12px;padding:8px max(16px,env(safe-area-inset-left,0px)) 8px max(16px,env(safe-area-inset-right,0px));min-height:58px}
+.brand{display:flex;align-items:center;gap:10px;min-width:0;flex:0 1 auto}
+.brand .logo{width:30px;height:30px;flex:none;color:var(--accent)}
+.brand h1{margin:0;font-size:1.12rem;font-weight:700;white-space:nowrap}
+.brand .me{font-family:var(--mono);font-weight:700;color:var(--accent);font-size:.9rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.clock{margin-left:auto;display:flex;gap:14px;align-items:flex-end;font-family:var(--mono);font-weight:500;font-size:1.02rem}
+.clock span{display:flex;flex-direction:column;align-items:flex-end;line-height:1.05}
+.clock small{font-family:var(--sans);font-size:.68rem;color:var(--muted);margin-bottom:2px;max-width:8rem;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#clockLoc{color:var(--accent);font-weight:700}
+.sync{display:flex;align-items:center;gap:6px;font-size:.8rem;color:var(--muted);white-space:nowrap}
+.sync i{width:9px;height:9px;border-radius:50%;background:var(--muted);display:inline-block;flex:none}
+.sync[data-s="cloud"] i{background:var(--accent)}
+.sync[data-s="err"] i{background:var(--bad)}
+.hdr-actions{display:flex;gap:6px;align-items:center}
+.icon-btn{border:1px solid var(--line);background:var(--sunk);border-radius:10px;width:42px;height:42px;display:grid;place-items:center;cursor:pointer;position:relative}
+.icon-btn:hover{border-color:var(--accent)}
+.icon-btn svg{width:21px;height:21px}
+.icon-btn[aria-expanded="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.menuwrap{position:relative}
+.menu{position:absolute;right:0;top:calc(100% + 8px);min-width:270px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.18);padding:6px;z-index:40}
+.menu [role=menuitem]{display:flex;align-items:center;justify-content:space-between;gap:12px;width:100%;text-align:left;border:0;background:none;padding:11px 12px;border-radius:8px;cursor:pointer;font-weight:500;min-height:44px}
+.menu [role=menuitem]:hover,.menu [role=menuitem]:focus-visible{background:var(--sunk)}
+.menu kbd{font-family:var(--mono);font-size:.72rem;color:var(--muted)}
+.menu hr{border:0;border-top:1px solid var(--line);margin:6px 4px}
+.menu .mhead{font-size:.75rem;color:var(--muted);padding:6px 12px 2px}
+
+/* ---------- Mise en page ---------- */
+.wrap{max-width:1380px;margin:0 auto;padding:16px max(16px,env(safe-area-inset-left,0px)) 28px max(16px,env(safe-area-inset-right,0px))}
+.layout{display:grid;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:var(--shadow)}
+@media (min-width:1000px){
+  .layout{grid-template-columns:minmax(400px,470px) minmax(0,1fr);align-items:start}
+  .col-entry{position:sticky;top:calc(env(safe-area-inset-top,0px) + 74px);max-height:calc(100vh - env(safe-area-inset-top,0px) - 90px);overflow:auto;overscroll-behavior:contain;padding-right:2px;scrollbar-width:thin}
+}
+@media (min-width:1500px){.layout{grid-template-columns:500px minmax(0,1fr)}}
+
+/* ---------- Saisie ---------- */
+.entry{padding:14px 16px 0}
+.entry-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.seg,.tabs{display:inline-flex;background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:3px}
+.seg button,.tabs button{border:0;background:none;padding:7px 16px;border-radius:8px;cursor:pointer;font-weight:600;color:var(--muted);min-height:38px}
+.seg button[aria-pressed="true"],.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line)}
+.ton{font-size:.85rem;color:var(--muted);background:none;border:0;cursor:pointer;padding:4px 0;text-align:right}
+.ton b{font-family:var(--mono);color:var(--ink);font-weight:500}
+.stationbar{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:0 0 12px;padding:8px 10px;background:var(--sunk);border:1px solid var(--line2);border-radius:10px}
+.stationbar label{font-size:.82rem;color:var(--muted)}
+.stationbar select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-height:40px;max-width:100%;font-weight:600;font-size:16px}
+.stationbar .stinfo{font-size:.82rem;color:var(--muted)}
+.display{position:relative;background:var(--sunk);border:1.5px solid var(--line);border-radius:12px;padding:8px 12px 10px;margin-bottom:12px}
+.display:focus-within{border-color:var(--accent)}
+.display label{font-size:.8rem;color:var(--muted);display:block}
+#fCall{width:100%;border:0;background:none;padding:0;font-family:var(--mono);font-feature-settings:"zero" 1;font-weight:700;
+  font-size:clamp(1.8rem,7.5vw,2.5rem);letter-spacing:.04em;line-height:1.15;text-transform:uppercase}
+#fCall:focus{outline:none}
+#fCall::placeholder{color:var(--line);text-transform:none;letter-spacing:.02em}
+.flagline{font-size:.88rem;color:var(--muted);min-height:1.3em}
+.flagline b{color:var(--ink);font-weight:600}
+.flagline span{color:var(--muted)}
+.grp-title{font-size:.78rem;font-weight:700;color:var(--muted);margin:16px 2px 8px;display:flex;align-items:center;gap:8px}
+.grp-title::after{content:"";flex:1;border-top:1px solid var(--line2)}
+.row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px}
+.row.r3{grid-template-columns:1.3fr 1fr}
+.row .full{grid-column:1 / -1}
+.fld{min-width:0}
+.fld label{display:block;font-size:.8rem;color:var(--muted);margin:0 0 3px 2px}
+.fld input,.fld select,.fld textarea{width:100%;background:var(--sunk);border:1px solid var(--line);border-radius:9px;padding:9px 11px;min-height:46px;font-size:16px}
+.fld input:focus,.fld select:focus,.fld textarea:focus{outline:none;border-color:var(--accent);background:var(--surface)}
+.fld input.auto{border-style:dashed}
+.fld .mono-in{font-family:var(--mono);font-feature-settings:"zero" 1}
+.freqwrap{position:relative}
+.band{position:absolute;right:8px;top:50%;transform:translateY(-50%);font-family:var(--mono);font-size:.8rem;font-weight:700;
+  background:var(--accent-soft);color:var(--accent);padding:2px 7px;border-radius:5px;pointer-events:none}
+.band.off{background:var(--warn-bg);color:var(--warn)}
+.fld.err input{border-color:var(--bad)}
+details.more{margin:2px 0 8px;border:1px solid var(--line2);border-radius:10px}
+details.more summary{cursor:pointer;color:var(--ink);font-size:.92rem;font-weight:600;padding:11px 12px;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.more summary::-webkit-details-marker{display:none}
+details.more summary::after{content:"+";font-family:var(--mono);color:var(--muted);font-size:1.1rem}
+details.more[open] summary::after{content:"−"}
+details.more > .inner{padding:2px 12px 4px}
+.attach{display:flex;align-items:center;gap:8px;font-size:.88rem;background:var(--accent-soft);color:var(--accent);border-radius:9px;padding:7px 10px;margin:4px 0 8px;font-weight:600}
+.attach span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;font-family:var(--mono);font-size:.8rem}
+.attach button{border:0;background:none;color:inherit;cursor:pointer;font-weight:700;padding:2px 6px}
+.actions{display:flex;gap:8px;flex-wrap:wrap}
+.entry .actions{flex-wrap:nowrap;position:sticky;bottom:0;background:var(--surface);padding:12px 0 14px;margin-top:6px;border-top:1px solid var(--line2);z-index:2}
+.btn{border:1px solid var(--line);background:var(--sunk);border-radius:10px;padding:10px 16px;min-height:46px;font-weight:600;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:7px}
+.btn:hover{border-color:var(--accent)}
+.btn svg{width:18px;height:18px;flex:none}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink);flex:1 1 auto;min-width:0}
+.btn .xl{display:inline}
+.btn.danger{color:var(--bad);border-color:var(--bad);background:none}
+.btn.rec{color:var(--rec);border-color:color-mix(in srgb,var(--rec) 45%,var(--line))}
+.btn kbd{font-family:var(--mono);font-size:.7rem;opacity:.75;font-weight:500}
+.btn.small{min-height:38px;padding:6px 10px;font-size:.86rem}
+.hint{font-size:.82rem;color:var(--muted);margin:0 2px 14px}
+.hint code{font-family:var(--mono);color:var(--ink)}
+@media (hover:none){.btn kbd,.menu kbd{display:none}}
+
+/* ---------- Fiche station ---------- */
+.station{padding:14px 16px 16px;margin-top:16px}
+.st-head{display:flex;align-items:center;gap:12px}
+.st-flag{font-size:2.1rem;line-height:1}
+.st-name{font-size:1.25rem;font-weight:700;line-height:1.2}
+.st-sub{font-size:.85rem;color:var(--muted)}
+.facts{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin:14px 0 12px}
+.fact{background:var(--sunk);border-radius:9px;padding:7px 9px;min-width:0}
+.fact span{display:block;font-size:.74rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.fact b{font-family:var(--mono);font-weight:700;font-size:.98rem}
+.fact.compass{display:flex;align-items:center;gap:6px}
+.fact.compass svg{width:30px;height:30px;flex:none}
+.offs{font-size:.72rem;color:var(--muted);font-weight:500}
+@media (max-width:480px){.facts{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.badges{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.badge{font-size:.85rem;font-weight:600;padding:4px 9px;border-radius:6px;background:var(--sunk);color:var(--muted)}
+.badge.good{background:var(--accent-soft);color:var(--accent)}
+.badge.warn{background:var(--warn-bg);color:var(--warn)}
+.hist{list-style:none;margin:0 0 12px;padding:0;font-size:.88rem}
+.hist li{display:flex;gap:10px;padding:6px 0;border-top:1px solid var(--line2)}
+.hist li .mono{font-size:.82rem}
+.hist .who{color:var(--muted);margin-left:auto;text-align:right}
+.gear{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px 12px;margin:0 0 12px;font-size:.88rem}
+.gear div{min-width:0}
+.gear dt{font-size:.75rem;color:var(--muted)}
+.gear dd{margin:0;overflow-wrap:anywhere}
+.st-notes label{font-size:.8rem;color:var(--muted)}
+.st-notes textarea{width:100%;min-height:64px;resize:vertical;background:var(--sunk);border:1px solid var(--line);border-radius:9px;padding:8px 10px;margin-top:3px;font-size:16px}
+.links{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap}
+.links a{color:var(--accent);font-weight:600;text-decoration:none;border:1px solid var(--line);border-radius:9px;padding:8px 12px;font-size:.9rem}
+.links a:hover{border-color:var(--accent)}
+.note-small{font-size:.8rem;color:var(--muted)}
+.note-small.tight{margin:-4px 0 10px}
+.linkbtn{border:0;background:none;color:var(--accent);cursor:pointer;padding:2px 4px;font:inherit;font-weight:600}
+.linkbtn:hover{text-decoration:underline}
+
+/* ---------- Journal ---------- */
+.logcard{padding:12px 0 6px;min-width:0}
+.log-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px 16px;padding:0 16px 12px}
+.stats{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:.88rem;color:var(--muted)}
+.stats b{font-family:var(--mono);color:var(--ink);font-weight:700}
+.log-tools{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 12px}
+.log-tools input[type=search]{flex:1 1 220px;background:var(--sunk);border:1px solid var(--line);border-radius:10px;padding:9px 12px;min-height:44px;font-size:16px;min-width:0}
+.log-tools .btn{min-height:44px;padding:8px 12px;font-size:.9rem}
+.list{border-top:1px solid var(--line)}
+.qrow{display:grid;grid-template-columns:4.9rem minmax(0,1fr) auto;gap:2px 12px;width:100%;text-align:left;border:0;border-bottom:1px solid var(--line2);
+  background:none;padding:10px 16px;cursor:pointer;align-items:center;min-height:56px}
+.qrow:hover{background:var(--sunk)}
+.qrow.sel{background:var(--accent-soft)}
+.qrow .t{font-family:var(--mono);font-size:.78rem;color:var(--muted);line-height:1.25;grid-row:1 / 3}
+.qrow .c{font-family:var(--mono);font-feature-settings:"zero" 1;font-weight:700;font-size:1.04rem;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.qrow .m{font-family:var(--mono);font-size:.78rem;text-align:right;white-space:nowrap}
+.qrow .m .bd{color:var(--accent);font-weight:700}
+.qrow .x{grid-column:2;font-size:.82rem;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+.qrow .dk{grid-column:3;font-family:var(--mono);font-size:.76rem;color:var(--muted);text-align:right;white-space:nowrap}
+.tag-swl,.tag-vid{font-family:var(--sans);font-size:.7rem;font-weight:700;padding:1px 6px;border-radius:4px;margin-left:6px;vertical-align:2px}
+.tag-swl{background:var(--warn-bg);color:var(--warn)}
+.tag-vid{background:var(--accent-soft);color:var(--accent)}
+@media (min-width:1180px){
+  .qrow{grid-template-columns:6rem minmax(9rem,1fr) minmax(0,1.6fr) 7.5rem 6.5rem}
+  .qrow .t{grid-row:auto}
+  .qrow .x{grid-column:auto}
+  .qrow .m{order:4}
+  .qrow .dk{order:5;grid-column:auto}
+}
+.empty{padding:32px 16px;color:var(--muted);text-align:center}
+.more-rows{padding:12px 16px;color:var(--muted);font-size:.85rem}
+.fixbox{padding:12px 16px;border-top:1px solid var(--line);background:var(--warn-bg)}
+.fixbox p{margin:0 0 8px;font-size:.9rem}
+.importpick{padding:12px 16px;border-top:1px solid var(--line);display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.importpick p{margin:0 0 4px;width:100%}
+
+/* ---------- Carte ---------- */
+.mapwrap{position:relative;border-top:1px solid var(--line);background:var(--sea)}
+#map{height:clamp(340px,calc(100vh - 290px),820px);width:100%}
+.mapmsg{position:absolute;inset:0;display:grid;place-items:center;color:var(--muted);padding:20px;text-align:center}
+.maptools{display:flex;flex-wrap:wrap;gap:8px;padding:0 16px 12px;align-items:center}
+.maptools .btn{min-height:40px;padding:6px 12px;font-size:.88rem}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:.84rem;color:var(--muted);margin-left:auto}
+.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:5px;vertical-align:-1px}
+.mapinfo{padding:12px 16px;font-size:.88rem;color:var(--muted);border-top:1px solid var(--line);line-height:1.8}
+.mapinfo b{color:var(--ink);font-family:var(--mono)}
+.mappick{border-top:1px solid var(--line)}
+.mappick h3{margin:0;padding:12px 16px 8px;font-size:1rem}
+
+/* ---------- Réglages ---------- */
+.settings{padding:16px;margin-bottom:16px}
+.settings h2{margin:0 0 8px;font-size:1.1rem}
+.stgrid{display:grid;gap:12px;margin-bottom:12px}
+@media (min-width:900px){.stgrid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.stcard{border:1px solid var(--line);border-radius:12px;padding:10px 12px 4px;margin:0;min-width:0}
+.stcard legend{font-weight:700;padding:0 6px}
+
+/* ---------- Navigation mobile ---------- */
+.bottomnav{display:none}
+@media (max-width:999px){
+  :root{--navh:64px}
+  .tabs{display:none}
+  body[data-view="entry"] .logcard{display:none}
+  body:not([data-view="entry"]) .col-entry{display:none}
+  .wrap{padding-bottom:calc(var(--navh) + 20px)}
+  .bottomnav{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--surface);border-top:1px solid var(--line);
+    padding:4px max(8px,env(safe-area-inset-left,0px)) calc(4px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-right,0px))}
+  .bottomnav button{flex:1;border:0;background:none;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:56px;color:var(--muted);font-size:.74rem;font-weight:600;cursor:pointer;border-radius:10px}
+  .bottomnav button svg{width:23px;height:23px}
+  .bottomnav button[aria-current="page"]{color:var(--accent)}
+  .bottomnav button[aria-current="page"] svg{background:var(--accent-soft);border-radius:12px;padding:3px 14px;width:52px;height:30px;box-sizing:border-box}
+  .entry .actions{bottom:calc(var(--navh) + env(safe-area-inset-bottom,0px))}
+  .entry .actions{margin-left:-16px;margin-right:-16px;padding-left:16px;padding-right:16px}
+  #map{height:calc(100vh - var(--navh) - 260px);min-height:320px}
+}
+@media (max-width:640px){
+  .brand h1{font-size:1rem}
+  .brand .me{display:none}
+  .sync span{display:none}
+  .top{gap:8px}
+  .clock{gap:8px;font-size:.92rem}
+  .clock small{max-width:4.5rem}
+  .icon-btn{width:40px;height:40px}
+  .wrap{padding-left:max(10px,env(safe-area-inset-left,0px));padding-right:max(10px,env(safe-area-inset-right,0px));padding-top:10px}
+  .entry{padding:12px 12px 0}
+  .entry .actions{margin-left:-12px;margin-right:-12px;padding-left:12px;padding-right:12px}
+  .btn .xl{display:none}
+  .entry .actions .btn{padding:10px 12px}
+  .log-tools{flex-wrap:nowrap}
+  .log-tools input[type=search]{flex:1 1 0}
+  .log-tools .btn{flex:none;padding:8px 10px}
+}
+@media (max-width:540px){
+  .brand h1{display:none}
+}
+@media (max-width:400px){
+  .row{gap:8px}
+}
+
+/* ---------- Vidéo ---------- */
+.sheet{position:fixed;inset:0;z-index:50;background:rgba(5,10,15,.62);display:flex;align-items:center;justify-content:center;
+  padding:calc(env(safe-area-inset-top,0px) + 16px) 16px calc(env(safe-area-inset-bottom,0px) + 16px)}
+.sheet-box{background:var(--surface);border-radius:16px;width:min(760px,100%);max-height:100%;overflow:auto;box-shadow:0 20px 60px rgba(0,0,0,.4);display:flex;flex-direction:column}
+.sheet-head{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line)}
+.sheet-head h2{margin:0;font-size:1.05rem;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vidstage{position:relative;background:#000;aspect-ratio:16/9;width:100%}
+.vidstage video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.vidstage .mirror{transform:scaleX(-1)}
+.recbadge{position:absolute;top:10px;left:10px;display:flex;align-items:center;gap:7px;background:rgba(0,0,0,.6);color:#fff;font-family:var(--mono);font-size:.9rem;padding:5px 10px;border-radius:20px}
+.recbadge i{width:10px;height:10px;border-radius:50%;background:#FF4B3E;animation:blink 1s steps(2) infinite}
+@keyframes blink{50%{opacity:.2}}
+@media (prefers-reduced-motion:reduce){.recbadge i{animation:none}}
+.vidmsg{position:absolute;inset:0;display:grid;place-items:center;color:#E3EAF0;text-align:center;padding:20px;font-size:.95rem;line-height:1.5}
+.vidbar{display:flex;flex-wrap:wrap;gap:8px;padding:12px 14px;align-items:center}
+.vidbar .grow{flex:1}
+.recbtn{width:64px;height:64px;border-radius:50%;border:4px solid var(--line);background:var(--surface);display:grid;place-items:center;cursor:pointer;flex:none}
+.recbtn i{width:28px;height:28px;border-radius:50%;background:var(--rec);transition:border-radius .15s,width .15s,height .15s}
+.recbtn.on i{border-radius:6px;width:24px;height:24px}
+.vidnote{font-size:.8rem;color:var(--muted);padding:0 14px 14px;margin:0}
+@media (max-width:640px){
+  .sheet{padding:0}
+  .sheet-box{border-radius:0;height:100%;max-height:none;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+  .vidstage{aspect-ratio:auto;flex:1;min-height:50vh}
+}
+
+.toast{position:fixed;left:50%;bottom:calc(18px + var(--navh) + env(safe-area-inset-bottom,0px));transform:translateX(-50%);background:var(--ink);color:var(--surface);
+  padding:10px 16px;border-radius:10px;font-weight:600;font-size:.92rem;max-width:calc(100% - 32px);z-index:60;opacity:0;pointer-events:none;transition:opacity .18s;text-align:center}
+.toast.on{opacity:1}
+@media (prefers-reduced-motion:reduce){.toast{transition:none}}
+body.swl .qso-only{display:none !important}
+body:not(.swl) .swl-only{display:none !important}
+
+.bkbox{background:var(--sunk)}
+.bkbox .actions{margin-top:2px}
+.instbody{padding:14px 18px 18px;font-size:.95rem;line-height:1.55}
+.instbody ol{padding-left:1.3em;margin:8px 0 12px}
+.instbody li{margin:4px 0}
+.instbody .plat{font-weight:700;margin:14px 0 2px}
+.instbody .ico{display:inline-block;vertical-align:-3px;width:18px;height:18px}
+.instbody .ok{background:var(--accent-soft);color:var(--accent);border-radius:9px;padding:10px 12px;font-weight:600}
+@media (display-mode: standalone){ .top{padding-top:8px} }
+</style>
+</head>
+<body data-view="entry">
+<header class="top">
+  <div class="brand">
+    <svg class="logo" viewBox="0 0 32 32" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M16 17v12M11 29h10"/><circle cx="16" cy="14" r="2.6" fill="currentColor" stroke="none"/><path d="M10.5 8.5a8 8 0 0 0 0 11M21.5 8.5a8 8 0 0 1 0 11M6.5 4.5a13.5 13.5 0 0 0 0 19M25.5 4.5a13.5 13.5 0 0 1 0 19"/></svg>
+    <h1>Carnet de trafic</h1><span class="me" id="meCall"></span>
+  </div>
+  <div class="clock"><span id="clockLoc" aria-label="Heure locale de la station"></span><span id="clockUtc" aria-label="Heure UTC"></span></div>
+  <div class="sync" id="sync" data-s="local" title="État de la synchronisation"><i></i><span id="syncTxt">Sur cet appareil</span></div>
+  <div class="hdr-actions">
+    <button class="icon-btn" id="btnTheme" aria-label="Thème"></button>
+    <div class="menuwrap">
+      <button class="icon-btn" id="btnFile" aria-haspopup="menu" aria-expanded="false" aria-controls="fileMenu" aria-label="Fichier : enregistrer, ouvrir, importer, exporter">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h11l3 3v15H5z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/></svg>
+      </button>
+      <div class="menu" id="fileMenu" role="menu" hidden>
+        <div class="mhead">Mon carnet</div>
+        <button role="menuitem" id="btnBackup"><span>Enregistrer sous…</span><kbd>Ctrl S</kbd></button>
+        <label role="menuitem" for="fileRestore" tabindex="0"><span>Ouvrir une sauvegarde…</span></label>
+        <hr>
+        <div class="mhead">Échanges</div>
+        <label role="menuitem" for="fileImport" tabindex="0"><span>Importer Access ou ADIF…</span></label>
+        <button role="menuitem" id="btnAdif"><span>Exporter en ADIF…</span></button>
+        <button role="menuitem" id="btnCsv"><span>Exporter pour Excel (CSV)…</span></button>
+        <button role="menuitem" id="btnCopy"><span>Copier l’ADIF</span></button>
+        <hr>
+        <button role="menuitem" id="btnInstall"><span>Installer l’application…</span></button>
+      </div>
+    </div>
+    <button class="icon-btn" id="btnSettings" aria-label="Réglages et stations" aria-expanded="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg>
+    </button>
+  </div>
+</header>
+<input type="file" id="fileImport" accept=".accdb,.mdb,.adi,.adif,.txt" class="sr" tabindex="-1">
+<input type="file" id="fileRestore" accept=".json,application/json" class="sr" tabindex="-1">
+
+<main class="wrap">
+  <section class="card settings" id="settings" hidden aria-label="Réglages">
+    <h2>Mes stations</h2>
+    <p class="note-small">Une station par configuration : fixe à la maison, mobile en voiture, portable en vacances. Chaque QSO garde le lieu, l’heure locale et le matériel de la station active.</p>
+    <div id="stList" class="stgrid"></div>
+    <div class="actions" style="margin-bottom:18px"><button class="btn" id="btnAddSt">Ajouter une station</button></div>
+    <h2>Général</h2>
+    <div class="row">
+      <div class="fld"><label for="sCall">Indicatif par défaut</label><input id="sCall" class="mono-in" autocapitalize="characters" autocomplete="off" spellcheck="false" placeholder="14 XX 000 ou F4XXX"></div>
+      <div class="fld"><label for="sTheme">Thème de cet appareil</label><select id="sTheme"><option value="">Comme le système</option><option value="light">Clair</option><option value="dark">Sombre</option></select></div>
+    </div>
+    <p class="note-small" id="homeNote"></p>
+    <div class="actions">
+      <button class="btn primary" id="btnSaveSettings">Valider les réglages</button>
+      <button class="btn" id="btnCloseSettings">Fermer</button>
+      <button class="btn danger" id="btnWipe">Effacer tout le carnet</button>
+    </div>
+  </section>
+
+  <div class="layout">
+    <div class="col-entry">
+      <section class="card entry" aria-label="Saisie d’un QSO">
+        <div class="entry-head">
+          <div class="seg" role="group" aria-label="Type de saisie">
+            <button id="segQso" aria-pressed="true">QSO</button>
+            <button id="segSwl" aria-pressed="false">Écoute</button>
+          </div>
+          <button class="ton" id="tonBtn" title="Remettre l’heure de début à maintenant" hidden>Début <b id="tonTxt"></b></button>
+        </div>
+        <div class="stationbar">
+          <label for="fStation">Ma station</label>
+          <select id="fStation"></select>
+          <button class="btn small" id="btnHere" hidden>Position GPS</button>
+          <span class="stinfo" id="stInfo"></span>
+        </div>
+
+        <div class="display">
+          <label for="fCall"><span class="qso-only">Indicatif contacté (QRZ)</span><span class="swl-only">Station entendue</span></label>
+          <input id="fCall" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="send" placeholder="14 TAT 83">
+          <div class="flagline" id="flagline" aria-live="polite"></div>
+        </div>
+
+        <div class="row swl-only">
+          <div class="fld full"><label for="fCall2">En QSO avec</label><input id="fCall2" class="mono-in" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="send"></div>
+        </div>
+        <div class="row r3">
+          <div class="fld" id="fldFreq"><label for="fFreq">Fréquence (MHz)</label>
+            <div class="freqwrap"><input id="fFreq" class="mono-in" inputmode="decimal" autocomplete="off" enterkeyhint="send" placeholder="27,555"><span class="band" id="bandTag" hidden></span></div></div>
+          <div class="fld"><label for="fMode">Mode</label><select id="fMode"></select></div>
+        </div>
+        <div class="row">
+          <div class="fld qso-only"><label for="fRs">Signal donné</label><input id="fRs" class="mono-in" autocapitalize="characters" enterkeyhint="send"></div>
+          <div class="fld"><label for="fRr"><span class="qso-only">Signal reçu</span><span class="swl-only">Report d’écoute</span></label><input id="fRr" class="mono-in" autocapitalize="characters" enterkeyhint="send"></div>
+        </div>
+
+        <div class="grp-title">Correspondant</div>
+        <div class="row">
+          <div class="fld"><label for="fName">Prénom</label><input id="fName" autocomplete="off" enterkeyhint="send"></div>
+          <div class="fld"><label for="fQth">Ville</label><input id="fQth" autocomplete="off" enterkeyhint="send" placeholder="Ville, dép."></div>
+        </div>
+        <div class="row">
+          <div class="fld"><label for="fPays">Pays</label><input id="fPays" autocomplete="off" enterkeyhint="send"></div>
+          <div class="fld"><label for="fLoc">Locator</label><input id="fLoc" class="mono-in" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="send" placeholder="JN25"></div>
+        </div>
+        <div class="row">
+          <div class="fld full"><label for="fNote">Note</label><input id="fNote" autocomplete="off" enterkeyhint="send"></div>
+        </div>
+        <details class="more" id="hisBox">
+          <summary>Sa station (radio, antenne…)</summary>
+          <div class="inner">
+            <div class="row">
+              <div class="fld"><label for="fRig">Radio TX</label><input id="fRig" autocomplete="off" enterkeyhint="send"></div>
+              <div class="fld"><label for="fAnt">Antenne</label><input id="fAnt" autocomplete="off" enterkeyhint="send"></div>
+            </div>
+            <div class="row">
+              <div class="fld"><label for="fMic">Micro</label><input id="fMic" autocomplete="off" enterkeyhint="send"></div>
+              <div class="fld"><label for="fOpwr">Sa puissance</label><input id="fOpwr" autocomplete="off" enterkeyhint="send"></div>
+            </div>
+            <div class="row">
+              <div class="fld"><label for="fEmail">Email</label><input id="fEmail" type="email" autocomplete="off" enterkeyhint="send"></div>
+              <div class="fld"><label for="fContest">N° contest</label><input id="fContest" autocomplete="off" enterkeyhint="send"></div>
+            </div>
+          </div>
+        </details>
+        <details class="more" id="moreBox">
+          <summary>Date, heure et ma puissance</summary>
+          <div class="inner">
+            <div class="row">
+              <div class="fld"><label for="fDate" id="lblDate">Date</label><input id="fDate" type="date"></div>
+              <div class="fld"><label for="fTime" id="lblTime">Heure de début</label><input id="fTime" type="time"></div>
+            </div>
+            <div class="row">
+              <div class="fld"><label for="fPwr">Ma puissance</label><input id="fPwr" enterkeyhint="send"></div>
+            </div>
+          </div>
+        </details>
+        <div class="attach" id="vidAttach" hidden>🎥 <span id="vidName"></span><button id="vidDetach" aria-label="Retirer la vidéo de ce QSO">✕</button></div>
+        <div class="actions">
+          <button class="btn primary" id="btnLog">Enregistrer<span class="xl"> le QSO</span><kbd>Entrée</kbd></button>
+          <button class="btn rec" id="btnVideo" title="Filmer le QSO avec la caméra">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="6" width="14" height="12" rx="2"/><path d="M16 10l6-3v10l-6-3z"/></svg><span>Vidéo</span></button>
+          <button class="btn" id="btnClear">Effacer<kbd>Échap</kbd></button>
+          <button class="btn danger" id="btnDel" hidden>Supprimer</button>
+        </div>
+        <p class="hint">Indicatifs CB (<code>14 TAT 83</code>) et radioamateur (<code>F4ABC</code>). Pour un radioamateur, <code>F4ABC 57 JN25 Paul</code> range le report, le locator et le prénom.</p>
+      </section>
+
+      <section class="card station" id="station" hidden aria-label="Fiche station" aria-live="polite"></section>
+    </div>
+
+    <section class="card logcard" aria-label="Journal et carte">
+      <div class="log-head">
+        <div class="tabs" role="tablist">
+          <button role="tab" id="tabLog" aria-selected="true" aria-controls="panelLog">Journal</button>
+          <button role="tab" id="tabMap" aria-selected="false" aria-controls="panelMap">Carte</button>
+        </div>
+        <div class="stats" id="stats"></div>
+      </div>
+      <div id="panelLog" role="tabpanel">
+        <div class="log-tools">
+          <input type="search" id="logSearch" placeholder="Indicatif, prénom, ville, pays, bande…" aria-label="Rechercher dans le journal">
+          <button class="btn" id="btnTimeMode" title="Afficher les heures en local ou en UTC">Heures : locales</button>
+        </div>
+        <div class="importpick" id="importPick" hidden></div>
+        <div class="fixbox" id="fixBox" hidden></div>
+        <div class="fixbox bkbox" id="bkBox" hidden></div>
+        <div class="list" id="logList"></div>
+      </div>
+      <div id="panelMap" role="tabpanel" hidden>
+        <div class="maptools">
+          <button class="btn" id="mapFrance">France</button>
+          <button class="btn" id="mapEurope">Europe</button>
+          <button class="btn" id="mapWorld">Monde</button>
+          <div class="legend">
+            <span><i style="background:var(--accent)"></i>Ville ou locator</span>
+            <span><i style="background:var(--pin2)"></i>Département ou région</span>
+            <span><i style="background:var(--warn)"></i>Pays seul</span>
+            <span><i style="background:var(--ink);border-radius:2px;transform:rotate(45deg)"></i>Ma station</span>
+          </div>
+        </div>
+        <div class="mapwrap"><div id="map"></div><div class="mapmsg" id="mapMsg" hidden></div></div>
+        <div class="mappick" id="mapPick" hidden></div>
+        <div class="mapinfo" id="mapInfo"></div>
+      </div>
+    </section>
+  </div>
+</main>
+
+<nav class="bottomnav" aria-label="Navigation">
+  <button data-view="entry" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Saisie</button>
+  <button data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Journal</button>
+  <button data-view="map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>Carte</button>
+</nav>
+
+<div class="sheet" id="videoSheet" role="dialog" aria-modal="true" aria-labelledby="vidTitle" hidden>
+  <div class="sheet-box">
+    <div class="sheet-head">
+      <h2 id="vidTitle">Vidéo du QSO</h2>
+      <button class="icon-btn" id="vidClose" aria-label="Fermer">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+      </button>
+    </div>
+    <div class="vidstage">
+      <video id="vidLive" playsinline muted autoplay></video>
+      <video id="vidPlay" playsinline controls hidden></video>
+      <div class="recbadge" id="recBadge" hidden><i></i><span id="recTime">00:00</span></div>
+      <div class="vidmsg" id="vidMsg" hidden></div>
+    </div>
+    <div class="vidbar">
+      <button class="recbtn" id="vidRec" aria-label="Démarrer l’enregistrement"><i></i></button>
+      <button class="btn" id="vidFlip" title="Changer de caméra">Changer de caméra</button>
+      <label class="btn" id="vidNativeLbl" for="vidNative">Filmer avec l’appareil photo</label>
+      <input type="file" id="vidNative" accept="video/*" capture="environment" class="sr" tabindex="-1">
+      <span class="grow"></span>
+      <button class="btn" id="vidRetake" hidden>Recommencer</button>
+      <button class="btn primary" id="vidSave" hidden>Enregistrer sous…</button>
+    </div>
+    <p class="vidnote" id="vidNote">La vidéo reste sur ton appareil : rien n’est envoyé en ligne.</p>
+  </div>
+</div>
+<div class="sheet" id="installSheet" role="dialog" aria-modal="true" aria-labelledby="instTitle" hidden>
+  <div class="sheet-box" style="width:min(560px,100%)">
+    <div class="sheet-head">
+      <h2 id="instTitle">Installer le carnet</h2>
+      <button class="icon-btn" id="instClose" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="instbody" id="instBody"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+"use strict";
+(function(){
+var $ = function(id){ return document.getElementById(id); };
+var DX_RAW = [
+"F TM|France|fr|EU|14|46.5|2.5","TK|Corse|fr|EU|15|42.1|9.1","FG|Guadeloupe|gp|NA|8|16.2|-61.5","FM|Martinique|mq|NA|8|14.6|-61",
+"FY|Guyane|gf|SA|9|4|-53","FR|La Réunion|re|AF|39|-21.1|55.5","FH|Mayotte|yt|AF|39|-12.8|45.2","FK|Nouvelle-Calédonie|nc|OC|32|-21.5|165.5",
+"FO|Polynésie française|pf|OC|32|-17.6|-149.4","FP|Saint-Pierre-et-Miquelon|pm|NA|5|46.8|-56.2","FS|Saint-Martin|mf|NA|8|18.1|-63.1",
+"FJ|Saint-Barthélemy|bl|NA|8|17.9|-62.8","FW|Wallis-et-Futuna|wf|OC|32|-13.3|-176.2",
+"DA DB DC DD DE DF DG DH DI DJ DK DL DM DN DO DP DQ DR|Allemagne|de|EU|14|51|10",
+"ON OO OP OQ OR OS OT|Belgique|be|EU|14|50.6|4.6","PA PB PC PD PE PF PG PH PI|Pays-Bas|nl|EU|14|52.2|5.3",
+"LX|Luxembourg|lu|EU|14|49.7|6.1","HB HE|Suisse|ch|EU|14|46.8|8.2","HB0 HE0|Liechtenstein|li|EU|14|47.1|9.5","OE|Autriche|at|EU|15|47.5|14.5",
+"3A|Monaco|mc|EU|14|43.7|7.4","C3|Andorre|ad|EU|14|42.5|1.5",
+"G M 2E GB|Angleterre|gb|EU|14|52.5|-1.5","GW MW 2W GC MC|Pays de Galles|gb|EU|14|52.3|-3.7","GM MM 2M GS MS|Écosse|gb|EU|14|56.8|-4.2",
+"GI MI 2I GN MN|Irlande du Nord|gb|EU|14|54.6|-6.7","GD MD 2D GT MT|Île de Man|im|EU|14|54.2|-4.5","GJ MJ 2J GH MH|Jersey|je|EU|14|49.2|-2.1",
+"GU MU 2U GP MP|Guernesey|gg|EU|14|49.5|-2.6","EI EJ|Irlande|ie|EU|14|53.2|-8",
+"EA EB EC ED EE EF EG EH AM AN AO|Espagne|es|EU|14|40.2|-3.7","EA6 EB6 EC6 ED6 EE6 EF6 EG6 EH6 AM6 AN6 AO6|Baléares|es|EU|14|39.6|2.9",
+"EA8 EB8 EC8 ED8 EE8 EF8 EG8 EH8 AM8 AN8 AO8|Canaries|es|AF|33|28.3|-15.6","EA9 EB9 EC9 ED9 EE9 EF9 EG9 EH9|Ceuta et Melilla|es|AF|33|35.9|-5.3",
+"CT CQ CR CS|Portugal|pt|EU|14|39.5|-8","CT3 CQ3 CR3 CS3 CQ9 CR9|Madère|pt|AF|33|32.7|-16.9","CU CQ8 CR8 CS8 CT8|Açores|pt|EU|14|38.5|-28",
+"I|Italie|it|EU|15|42.8|12.6","IS0 IM0|Sardaigne|it|EU|15|40|9","T7|Saint-Marin|sm|EU|15|43.9|12.4","HV|Vatican|va|EU|15|41.9|12.45","9H|Malte|mt|EU|15|35.9|14.4",
+"SV SW SX SY SZ J4|Grèce|gr|EU|20|39|22","SV9 SW9 SX9 SY9 SZ9 J49|Crète|gr|EU|20|35.2|24.9","SV5 SW5 SX5 SY5 SZ5 J45|Dodécanèse|gr|EU|20|36.4|28",
+"5B C4 H2 P3|Chypre|cy|AS|20|35|33.2","TA TB TC YM|Turquie|tr|AS|20|39|35","TA1 TB1 TC1 YM1|Turquie d\u2019Europe|tr|EU|20|41.1|28.6",
+"LZ|Bulgarie|bg|EU|20|42.7|25.3","YO YP YQ YR|Roumanie|ro|EU|20|45.9|24.9","HA HG|Hongrie|hu|EU|15|47.2|19.5","OK OL|Tchéquie|cz|EU|15|49.8|15.5",
+"OM|Slovaquie|sk|EU|15|48.7|19.7","SP SN SO SQ SR 3Z HF|Pologne|pl|EU|15|52|19.4","LY|Lituanie|lt|EU|15|55.2|23.9","YL|Lettonie|lv|EU|15|56.9|24.6",
+"ES|Estonie|ee|EU|15|58.6|25","OH OF OG OI|Finlande|fi|EU|15|62|25.7","OH0 OF0 OG0 OI0|Åland|ax|EU|15|60.2|20","OJ0|Market Reef|ax|EU|15|60.3|19.1",
+"SM SA SB SC SD SE SF SG SH SI SJ SK SL 7S 8S|Suède|se|EU|14|60.1|15","LA LB LC LD LE LF LG LH LI LJ LK LL LM LN|Norvège|no|EU|14|61|9",
+"JW|Svalbard|sj|EU|40|78.2|15.6","JX|Jan Mayen|sj|EU|40|71|-8.4","OZ OU OV OW 5P 5Q|Danemark|dk|EU|14|56|10","OX XP|Groenland|gl|NA|40|64.2|-51.7",
+"OY|Féroé|fo|EU|14|62|-6.9","TF|Islande|is|EU|40|64.9|-19",
+"9A|Croatie|hr|EU|15|45.1|15.2","S5|Slovénie|si|EU|15|46.1|14.8","E7 T9|Bosnie-Herzégovine|ba|EU|15|43.9|17.7","YU YT|Serbie|rs|EU|15|44|20.9",
+"4O|Monténégro|me|EU|15|42.7|19.4","Z3|Macédoine du Nord|mk|EU|15|41.6|21.7","ZA|Albanie|al|EU|15|41.2|20.2","Z6|Kosovo|xk|EU|15|42.6|20.9",
+"ER|Moldavie|md|EU|16|47|28.4","UR US UT UU UV UW UX UY UZ EM EN EO|Ukraine|ua|EU|16|49|31.4","EU EV EW|Biélorussie|by|EU|16|53.7|28",
+"UN UO UP UQ|Kazakhstan|kz|AS|17|48|67","4L|Géorgie|ge|AS|21|42.3|43.4","EK|Arménie|am|AS|21|40.1|45","4J 4K|Azerbaïdjan|az|AS|21|40.1|47.6",
+"ZB ZG|Gibraltar|gi|EU|14|36.1|-5.35",
+"4X 4Z|Israël|il|AS|20|31.5|34.9","OD|Liban|lb|AS|20|33.9|35.9","JY|Jordanie|jo|AS|20|31.2|36.5","HZ 7Z 8Z|Arabie saoudite|sa|AS|21|24|45",
+"A6|Émirats arabes unis|ae|AS|21|24.3|54.4","A7|Qatar|qa|AS|21|25.3|51.2","9K|Koweït|kw|AS|21|29.3|47.9","A4|Oman|om|AS|21|21.5|57","A9|Bahreïn|bh|AS|21|26|50.55",
+"EP EQ 9B 9C 9D|Iran|ir|AS|21|32.4|53.7","YI|Irak|iq|AS|21|33.2|43.7","YK|Syrie|sy|AS|20|35|38.5","SU SS 6A 6B|Égypte|eg|AF|34|26.8|30.8",
+"CN 5C 5D 5E 5F 5G|Maroc|ma|AF|33|31.8|-7.1","7X 7R 7T 7U 7V 7W 7Y|Algérie|dz|AF|33|28|1.7","3V TS|Tunisie|tn|AF|33|34|9.5","5A|Libye|ly|AF|34|26.3|17.2",
+"6W 6V|Sénégal|sn|AF|35|14.5|-14.5","ZS ZR ZT ZU|Afrique du Sud|za|AF|38|-30.6|22.9","5Y 5Z|Kenya|ke|AF|37|-0.02|37.9","5N 5O|Nigeria|ng|AF|35|9.1|8.7",
+"V5|Namibie|na|AF|38|-22.9|18.5","TZ|Mali|ml|AF|35|17.6|-4","TU|Côte d\u2019Ivoire|ci|AF|35|7.5|-5.5","TJ|Cameroun|cm|AF|36|7.4|12.4",
+"5R 5S 6X|Madagascar|mg|AF|39|-18.8|46.9","3B8|Maurice|mu|AF|39|-20.3|57.6","9G|Ghana|gh|AF|35|7.9|-1","XT|Burkina Faso|bf|AF|35|12.2|-1.6",
+"TY|Bénin|bj|AF|35|9.3|2.3","5V|Togo|tg|AF|35|8.6|0.8","TR|Gabon|ga|AF|36|-0.8|11.6","TN|Congo|cg|AF|36|-0.2|15.8","9Q 9R 9S 9T|RD Congo|cd|AF|36|-4|21.8",
+"5T|Mauritanie|mr|AF|35|21|-10.9","D4|Cap-Vert|cv|AF|35|16|-24",
+"K N W AA AB AC AD AE AF AG AH AI AJ AK|États-Unis|us|NA|5|39.8|-98.6","AL KL NL WL|Alaska|us|NA|1|64.2|-149.5",
+"AH6 KH6 NH6 WH6 AH7 KH7 NH7 WH7|Hawaï|us|OC|31|20.8|-156.3","KP3 KP4 NP3 NP4 WP3 WP4|Porto Rico|pr|NA|8|18.2|-66.5",
+"KP2 NP2 WP2|Îles Vierges US|vi|NA|8|18.3|-64.9","AH2 KH2 NH2 WH2|Guam|gu|OC|27|13.4|144.8",
+"VE VA VO VY CY|Canada|ca|NA|5|56.1|-106.3","XE XF 6D 6E 6F 6G 6H 6I 6J 4A 4B 4C|Mexique|mx|NA|6|23.6|-102.5",
+"CO CM CL T4|Cuba|cu|NA|8|21.5|-78","HI|République dominicaine|do|NA|8|18.7|-70.2","HH|Haïti|ht|NA|8|19|-72.3","6Y|Jamaïque|jm|NA|8|18.1|-77.3",
+"C6|Bahamas|bs|NA|8|25|-77.4","8P|Barbade|bb|NA|8|13.2|-59.5","9Y 9Z|Trinité-et-Tobago|tt|SA|9|10.7|-61.2","PJ2|Curaçao|cw|SA|9|12.2|-69",
+"PJ4|Bonaire|bq|SA|9|12.2|-68.3","P4|Aruba|aw|SA|9|12.5|-70","VP9|Bermudes|bm|NA|5|32.3|-64.8","TI TE|Costa Rica|cr|NA|7|9.7|-83.8",
+"HP HO 3E 3F|Panama|pa|NA|7|8.5|-80.8","TG TD|Guatemala|gt|NA|7|15.8|-90.2","HR HQ|Honduras|hn|NA|7|15.2|-86.2","YS HU|Salvador|sv|NA|7|13.8|-88.9",
+"YN H6 H7|Nicaragua|ni|NA|7|12.9|-85.2",
+"PP PQ PR PS PT PU PV PW PX PY ZV ZW ZX ZY ZZ|Brésil|br|SA|11|-14.2|-51.9","LU LO LP LQ LR LS LT LV LW AY AZ L2 L3 L4 L5 L6 L7 L8 L9|Argentine|ar|SA|13|-38.4|-63.6",
+"CE CA CB CC CD XQ XR 3G|Chili|cl|SA|12|-35.7|-71.5","CX CV CW|Uruguay|uy|SA|13|-32.5|-55.8","YV YW YX YY 4M|Venezuela|ve|SA|9|6.4|-66.6",
+"HK HJ 5J 5K|Colombie|co|SA|9|4.6|-74.3","OA OB OC 4T|Pérou|pe|SA|10|-9.2|-75","HC HD|Équateur|ec|SA|10|-1.8|-78.2","CP|Bolivie|bo|SA|10|-16.3|-63.6",
+"ZP|Paraguay|py|SA|11|-23.4|-58.4","VP8|Malouines|fk|SA|13|-51.8|-59.5",
+"JA JE JF JG JH JI JJ JK JL JM JN JO JP JQ JR JS 7J 7K 7L 7M 7N 8J 8K 8L 8M 8N|Japon|jp|AS|25|36.2|138.3",
+"BY BA BD BG BH BI BJ BL BT BZ|Chine|cn|AS|24|35.9|104.2","BV BU BW BX BM BN BO BP BQ|Taïwan|tw|AS|24|23.7|121",
+"HL DS DT 6K 6L 6M 6N D7 D8 D9|Corée du Sud|kr|AS|25|36.5|127.9","VU AT AU AV AW 8T 8U 8V 8W 8X 8Y|Inde|in|AS|22|20.6|79",
+"HS E2|Thaïlande|th|AS|26|15.9|100.9","3W XV|Viêt Nam|vn|AS|26|14.1|108.3","DU DV DW DX DY DZ 4D 4E 4F 4G 4H 4I|Philippines|ph|OC|27|12.9|121.8",
+"YB YC YD YE YF YG YH 7A 7B 7C 7D 7E 7F 7G 7H 7I 8A 8B 8C 8D 8E 8F 8G 8H 8I PK PL PM PN PO|Indonésie|id|OC|28|-0.8|113.9",
+"9M2 9M4 9W2 9W4|Malaisie occidentale|my|AS|28|4.2|101.9","9M6 9M8 9W6 9W8|Malaisie orientale|my|OC|28|3.5|114","9V S6|Singapour|sg|AS|28|1.35|103.8",
+"VR2 VR|Hong Kong|hk|AS|24|22.3|114.2","AP AQ AR AS 6P 6Q 6R 6S|Pakistan|pk|AS|21|30.4|69.3","JT JU JV|Mongolie|mn|AS|23|46.9|103.8",
+"4S|Sri Lanka|lk|AS|22|7.9|80.8","9N|Népal|np|AS|22|28.4|84.1","S2 S3|Bangladesh|bd|AS|22|23.7|90.4",
+"VK AX|Australie|au|OC|30|-25.3|133.8","ZL ZM|Nouvelle-Zélande|nz|OC|32|-40.9|174.9","3D2|Fidji|fj|OC|32|-17.7|178","P2|Papouasie-Nouvelle-Guinée|pg|OC|28|-6.3|143.9"
+];
+var PFX = {}, MAXP = 0;
+DX_RAW.forEach(function(line){
+  var a = line.split("|");
+  var e = {name:a[1], iso:a[2], cont:a[3], cq:a[4], lat:+a[5], lon:+a[6]};
+  a[0].split(" ").forEach(function(p){ PFX[p] = e; if (p.length > MAXP) MAXP = p.length; });
+});
+var RU_EU = {name:"Russie (Europe)", iso:"ru", cont:"EU", cq:"16", lat:55.7, lon:37.6};
+var RU_AS = {name:"Russie (Asie)", iso:"ru", cont:"AS", cq:"17", lat:56, lon:84, approx:true};
+var RU_KA = {name:"Kaliningrad", iso:"ru", cont:"EU", cq:"15", lat:54.7, lon:20.5};
+var APPROX_CQ = {"États-Unis":1, "Canada":1, "Australie":1, "Chine":1, "Russie (Asie)":1};
+
+function lookupPrefix(s){
+  for (var l = Math.min(MAXP, s.length); l > 0; l--) {
+    var p = s.slice(0, l);
+    if (PFX[p]) return {p:p, e:PFX[p]};
+  }
+  return null;
+}
+function russia(s){
+  var m = s.match(/[0-9]/), d = m ? m[0] : "3";
+  var e = d === "2" ? RU_KA : ("890".indexOf(d) >= 0 ? RU_AS : RU_EU);
+  var pm = s.match(/^[A-Z]+[0-9]?/);
+  return Object.assign({p: pm ? pm[0] : s.slice(0,2)}, e);
+}
+var SUF = /^(P|M|MM|AM|QRP|QRPP|A|R|T|LH|B|J|[0-9])$/;
+function splitCall(raw){
+  var c = (raw || "").toUpperCase().replace(/[^A-Z0-9\/]/g, "");
+  var parts = c.split("/").filter(Boolean);
+  if (!parts.length) return null;
+  var base = parts.reduce(function(a, b){ return b.length > a.length ? b : a; });
+  var pre = null, mm = false;
+  parts.forEach(function(x){
+    if (x === "MM" || x === "AM") mm = true;
+    if (x !== base && !SUF.test(x) && x.length <= 4) pre = x;
+  });
+  return {full:c, base:base, pre:pre, mm:mm};
+}
+function validCall(b){ return !!b && b.length >= 3 && /[A-Z]/.test(b) && /[0-9]/.test(b); }
+function dxccOf(sc){
+  if (!sc) return null;
+  if (sc.mm) return {name:"Mobile maritime ou aérien", iso:"", cont:"", cq:"", lat:null, lon:null, p:"/MM"};
+  var s = sc.pre || sc.base;
+  if (/^(R|U[A-I])/.test(s)) return russia(s);
+  var r = lookupPrefix(s);
+  if (!r) return null;
+  return Object.assign({p:r.p}, r.e);
+}
+function flag(iso){
+  if (!iso || iso.length !== 2) return "";
+  var u = iso.toUpperCase();
+  return String.fromCodePoint(0x1F1E6 + u.charCodeAt(0) - 65, 0x1F1E6 + u.charCodeAt(1) - 65);
+}
+
+/* ---------- Géographie hors ligne ---------- */
+/* Départements : numéro|nom|lat|lon (préfecture) */
+var DEP_RAW = [
+"01|Ain|46.205|5.226","02|Aisne|49.564|3.62","03|Allier|46.566|3.333","04|Alpes de Haute Provence|44.092|6.236","05|Hautes Alpes|44.559|6.079",
+"06|Alpes Maritimes|43.71|7.262","07|Ardeche|44.735|4.599","08|Ardennes|49.773|4.72","09|Ariege|42.965|1.607","10|Aube|48.297|4.074",
+"11|Aude|43.212|2.353","12|Aveyron|44.35|2.575","13|Bouches du Rhone|43.296|5.37","14|Calvados|49.183|-0.371","15|Cantal|44.926|2.444",
+"16|Charente|45.648|0.156","17|Charente Maritime|46.16|-1.151","18|Cher|47.081|2.399","19|Correze|45.267|1.772","21|Cote d Or|47.322|5.041",
+"22|Cotes d Armor|48.514|-2.765","23|Creuse|46.171|1.871","24|Dordogne|45.184|0.721","25|Doubs|47.238|6.024","26|Drome|44.933|4.892",
+"27|Eure|49.027|1.151","28|Eure et Loir|48.446|1.489","29|Finistere|47.996|-4.102","30|Gard|43.837|4.36","31|Haute Garonne|43.605|1.444",
+"32|Gers|43.646|0.586","33|Gironde|44.838|-0.579","34|Herault|43.611|3.877","35|Ille et Vilaine|48.117|-1.678","36|Indre|46.81|1.691",
+"37|Indre et Loire|47.394|0.685","38|Isere|45.188|5.724","39|Jura|46.675|5.555","40|Landes|43.894|-0.5","41|Loir et Cher|47.586|1.335",
+"42|Loire|45.44|4.387","43|Haute Loire|45.043|3.885","44|Loire Atlantique|47.218|-1.554","45|Loiret|47.903|1.909","46|Lot|44.448|1.441",
+"47|Lot et Garonne|44.203|0.616","48|Lozere|44.518|3.5","49|Maine et Loire|47.478|-0.563","50|Manche|49.116|-1.091","51|Marne|48.957|4.363",
+"52|Haute Marne|48.111|5.139","53|Mayenne|48.073|-0.77","54|Meurthe et Moselle|48.692|6.184","55|Meuse|48.773|5.16","56|Morbihan|47.658|-2.76",
+"57|Moselle|49.119|6.176","58|Nievre|46.99|3.159","59|Nord|50.629|3.057","60|Oise|49.43|2.081","61|Orne|48.432|0.091",
+"62|Pas de Calais|50.291|2.777","63|Puy de Dome|45.778|3.087","64|Pyrenees Atlantiques|43.295|-0.37","65|Hautes Pyrenees|43.233|0.078","66|Pyrenees Orientales|42.699|2.895",
+"67|Bas Rhin|48.573|7.752","68|Haut Rhin|48.079|7.358","69|Rhone|45.764|4.835","70|Haute Saone|47.622|6.155","71|Saone et Loire|46.307|4.828",
+"72|Sarthe|48.006|0.199","73|Savoie|45.564|5.917","74|Haute Savoie|45.899|6.129","75|Paris|48.857|2.352","76|Seine Maritime|49.443|1.099",
+"77|Seine et Marne|48.539|2.661","78|Yvelines|48.801|2.13","79|Deux Sevres|46.323|-0.464","80|Somme|49.894|2.296","81|Tarn|43.929|2.148",
+"82|Tarn et Garonne|44.018|1.355","83|Var|43.124|5.928","84|Vaucluse|43.949|4.806","85|Vendee|46.67|-1.426","86|Vienne|46.58|0.34",
+"87|Haute Vienne|45.833|1.262","88|Vosges|48.172|6.45","89|Yonne|47.798|3.567","90|Territoire de Belfort|47.638|6.863","91|Essonne|48.629|2.441",
+"92|Hauts de Seine|48.892|2.207","93|Seine Saint Denis|48.909|2.44","94|Val de Marne|48.79|2.455","95|Val d Oise|49.036|2.076",
+"2A|Corse du Sud|41.919|8.738","2B|Haute Corse|42.697|9.451","971|Guadeloupe|16.24|-61.53","972|Martinique|14.64|-61.02","973|Guyane|4.92|-52.33",
+"974|Reunion|-20.882|55.45","976|Mayotte|-12.78|45.23"
+];
+/* Villes et régions : nom|lat|lon|pays|type (v = ville, r = région) */
+var PLACE_RAW = [
+"PARIS|48.857|2.352|France|v","LYON|45.764|4.835|France|v","MARSEILLE|43.296|5.37|France|v","TOULOUSE|43.605|1.444|France|v","NICE|43.71|7.262|France|v",
+"NANTES|47.218|-1.554|France|v","STRASBOURG|48.573|7.752|France|v","MONTPELLIER|43.611|3.877|France|v","BORDEAUX|44.838|-0.579|France|v","LILLE|50.629|3.057|France|v",
+"RENNES|48.117|-1.678|France|v","REIMS|49.258|4.032|France|v","LE HAVRE|49.494|0.108|France|v","SAINT ETIENNE|45.44|4.387|France|v","ST ETIENNE|45.44|4.387|France|v",
+"TOULON|43.124|5.928|France|v","GRENOBLE|45.188|5.724|France|v","DIJON|47.322|5.041|France|v","ANGERS|47.478|-0.563|France|v","NIMES|43.837|4.36|France|v",
+"VILLEURBANNE|45.766|4.88|France|v","CLERMONT FERRAND|45.778|3.087|France|v","LE MANS|48.006|0.199|France|v","AIX EN PROVENCE|43.529|5.447|France|v",
+"BREST|48.39|-4.486|France|v","TOURS|47.394|0.685|France|v","AMIENS|49.894|2.296|France|v","AMIEN|49.894|2.296|France|v|Amiens","LIMOGES|45.833|1.262|France|v",
+"ANNECY|45.899|6.129|France|v","PERPIGNAN|42.699|2.895|France|v","METZ|49.119|6.176|France|v","BESANCON|47.238|6.024|France|v","ORLEANS|47.903|1.909|France|v",
+"ROUEN|49.443|1.099|France|v","MULHOUSE|47.75|7.336|France|v","CAEN|49.183|-0.371|France|v","NANCY|48.692|6.184|France|v","AVIGNON|43.949|4.806|France|v",
+"POITIERS|46.58|0.34|France|v","LA ROCHELLE|46.16|-1.151|France|v","PAU|43.295|-0.37|France|v","CALAIS|50.951|1.858|France|v","DUNKERQUE|51.034|2.377|France|v",
+"BOULOGNE SUR MER|50.726|1.614|France|v","VALENCE|44.933|4.892|France|v","CHAMBERY|45.564|5.917|France|v","QUIMPER|47.996|-4.102|France|v","LORIENT|47.748|-3.37|France|v",
+"VANNES|47.658|-2.76|France|v","SAINT BRIEUC|48.514|-2.765|France|v|Saint-Brieuc","ST BRIEUC|48.514|-2.765|France|v|Saint-Brieuc","GUINGAMP|48.562|-3.15|France|v","GUINGAN|48.562|-3.15|France|v|Guingamp",
+"ROSCOFF|48.726|-3.985|France|v","MORLAIX|48.578|-3.828|France|v","SAINT MALO|48.649|-2.026|France|v","ST MALO|48.649|-2.026|France|v","LANNION|48.732|-3.456|France|v",
+"BAYEUX|49.276|-0.703|France|v|Bayeux","LISIEUX|49.146|0.226|France|v","PONT L EVEQUE|49.285|0.183|France|v|Pont-l\u2019Évêque","CHERBOURG|49.633|-1.622|France|v","SAINT LO|49.116|-1.091|France|v",
+"MACON|46.307|4.828|France|v","SAINT AMOUR|46.437|5.344|France|v","ST AMOUR|46.437|5.344|France|v","TARARE|45.896|4.433|France|v","AMPLEPUIS|45.972|4.331|France|v",
+"VILLEFRANCHE|45.99|4.718|France|v","VILLEFRANCHE SUR SAONE|45.99|4.718|France|v","ROANNE|46.036|4.068|France|v","BOURG EN BRESSE|46.205|5.226|France|v",
+"VIENNE|45.525|4.874|France|v","FREJUS|43.433|6.737|France|v|Fréjus","LE MUY|43.473|6.566|France|v","DRAGUIGNAN|43.537|6.465|France|v","HYERES|43.12|6.13|France|v",
+"CANNES|43.552|7.017|France|v","ANTIBES|43.58|7.125|France|v","AUBAGNE|43.293|5.571|France|v","MARTIGUES|43.405|5.048|France|v","ARLES|43.677|4.631|France|v",
+"MONTAUBAN|44.018|1.355|France|v","ALBI|43.929|2.148|France|v","AGEN|44.203|0.616|France|v","COMPIEGNE|49.418|2.826|France|v|Compiègne","BEAUVAIS|49.43|2.081|France|v",
+"SAINT QUENTIN|49.848|3.287|France|v","ST QUENTIN|49.848|3.287|France|v|Saint-Quentin","SOISSONS|49.381|3.323|France|v","LAON|49.564|3.62|France|v","HOUILLES|48.926|2.189|France|v",
+"OUILLES|48.926|2.189|France|v|Houilles","VERSAILLES|48.801|2.13|France|v","MAULDE|50.497|3.43|France|v","VALENCIENNES|50.358|3.523|France|v","ARRAS|50.291|2.777|France|v",
+"LENS|50.432|2.833|France|v","DOUAI|50.37|3.08|France|v","CAMBRAI|50.176|3.235|France|v","ABBEVILLE|50.105|1.835|France|v","TROYES|48.297|4.074|France|v",
+"CHARTRES|48.446|1.489|France|v","EVREUX|49.027|1.151|France|v","ALENCON|48.432|0.091|France|v","LAVAL|48.073|-0.77|France|v","CHOLET|47.06|-0.879|France|v",
+"SAINT NAZAIRE|47.273|-2.214|France|v","LA ROCHE SUR YON|46.67|-1.426|France|v","NIORT|46.323|-0.464|France|v","ANGOULEME|45.648|0.156|France|v","PERIGUEUX|45.184|0.721|France|v",
+"BRIVE|45.158|1.533|France|v","CAHORS|44.448|1.441|France|v","RODEZ|44.35|2.575|France|v","CARCASSONNE|43.212|2.353|France|v","NARBONNE|43.184|3.004|France|v",
+"BEZIERS|43.344|3.216|France|v","SETE|43.403|3.693|France|v","AJACCIO|41.919|8.738|France|v","BASTIA|42.697|9.451|France|v","BAYONNE|43.493|-1.475|France|v",
+"BIARRITZ|43.483|-1.559|France|v","TARBES|43.233|0.078|France|v","LOURDES|43.095|-0.046|France|v","GAP|44.559|6.079|France|v","DIGNE|44.092|6.236|France|v",
+"VICHY|46.128|3.426|France|v","MOULINS|46.566|3.333|France|v","MONTLUCON|46.34|2.603|France|v","NEVERS|46.99|3.159|France|v","AUXERRE|47.798|3.567|France|v",
+"CHALON SUR SAONE|46.781|4.854|France|v","BEAUNE|47.024|4.839|France|v","COLMAR|48.079|7.358|France|v","EPINAL|48.172|6.45|France|v","BELFORT|47.638|6.863|France|v",
+"THONON|46.371|6.479|France|v","ANNEMASSE|46.193|6.234|France|v","SAINT DENIS|-20.882|55.45|La Réunion|v",
+"BRETAGNE|48.2|-2.9|France|r","NORMANDIE|49.1|0.0|France|r","PICARDIE|49.7|2.6|France|r","PROVENCE|43.9|6.0|France|r","ALSACE|48.3|7.5|France|r",
+"BOURGOGNE|47.1|4.5|France|r","AUVERGNE|45.5|3.1|France|r","LORRAINE|48.8|6.2|France|r","CHAMPAGNE|48.9|4.4|France|r","ILE DE FRANCE|48.75|2.5|France|r",
+"VENDEE|46.67|-1.426|France|r","CORSE|42.15|9.1|France|r","SAVOIE|45.5|6.4|France|r","CAMARGUE|43.55|4.5|France|r","COTE D AZUR|43.6|7.0|France|r",
+"LONDON|51.507|-0.128|Angleterre|v","LONDRES|51.507|-0.128|Angleterre|v","BIRMINGHAM|52.486|-1.89|Angleterre|v","MANCHESTER|53.48|-2.242|Angleterre|v",
+"LIVERPOOL|53.408|-2.991|Angleterre|v","LEEDS|53.8|-1.549|Angleterre|v","SHEFFIELD|53.381|-1.47|Angleterre|v","BRISTOL|51.454|-2.588|Angleterre|v",
+"NEWCASTLE|54.978|-1.618|Angleterre|v","NEW CASTLE|54.978|-1.618|Angleterre|v|Newcastle","NOTTINGHAM|52.954|-1.158|Angleterre|v","LEICESTER|52.637|-1.14|Angleterre|v",
+"COVENTRY|52.408|-1.51|Angleterre|v","NORTHAMPTON|52.237|-0.894|Angleterre|v","THORNBY|52.372|-1.024|Angleterre|v","PLYMOUTH|50.375|-4.143|Angleterre|v",
+"SOUTHAMPTON|50.91|-1.404|Angleterre|v","PORTSMOUTH|50.82|-1.088|Angleterre|v","BRIGHTON|50.823|-0.137|Angleterre|v","NORWICH|52.63|1.297|Angleterre|v",
+"CAMBRIDGE|52.205|0.122|Angleterre|v","OXFORD|51.752|-1.258|Angleterre|v","YORK|53.96|-1.087|Angleterre|v","HULL|53.744|-0.333|Angleterre|v",
+"BLACKPOOL|53.817|-3.036|Angleterre|v","CORNWALL|50.4|-4.9|Angleterre|r","CORNOUAILLES|50.4|-4.9|Angleterre|r","KENT|51.2|0.7|Angleterre|r","DEVON|50.7|-3.8|Angleterre|r",
+"GLASGOW|55.864|-4.252|Écosse|v","EDINBURGH|55.953|-3.188|Écosse|v","EDIMBOURG|55.953|-3.188|Écosse|v","ABERDEEN|57.15|-2.094|Écosse|v","DUNDEE|56.462|-2.971|Écosse|v",
+"INVERNESS|57.478|-4.225|Écosse|v","GALASHIELS|55.617|-2.807|Écosse|v","PERTH|56.396|-3.437|Écosse|v","STIRLING|56.117|-3.936|Écosse|v","ECOSSE|56.8|-4.2|Écosse|r|Écosse",
+"SCOTLAND|56.8|-4.2|Écosse|r","CARDIFF|51.481|-3.179|Pays de Galles|v","SWANSEA|51.621|-3.944|Pays de Galles|v","NEWPORT|51.584|-2.998|Pays de Galles|v",
+"WREXHAM|53.046|-2.993|Pays de Galles|v","BELFAST|54.597|-5.93|Irlande du Nord|v","DERRY|54.997|-7.309|Irlande du Nord|v","NORD IRLANDE|54.6|-6.7|Irlande du Nord|r|Irlande du Nord",
+"IRLANDE DU NORD|54.6|-6.7|Irlande du Nord|r","NORTHERN IRELAND|54.6|-6.7|Irlande du Nord|r",
+"DUBLIN|53.35|-6.26|Irlande|v","GALWAY|53.271|-9.057|Irlande|v","CORK|51.897|-8.47|Irlande|v","LIMERICK|52.664|-8.63|Irlande|v","WATERFORD|52.259|-7.11|Irlande|v",
+"SLIGO|54.277|-8.476|Irlande|v","DONEGAL|54.654|-8.11|Irlande|v","KERRY|52.15|-9.6|Irlande|r","MAYO|53.9|-9.3|Irlande|r",
+"VENISE|45.44|12.336|Italie|v|Venise","VENEZIA|45.44|12.336|Italie|v","ROME|41.903|12.496|Italie|v","ROMA|41.903|12.496|Italie|v","MILAN|45.464|9.19|Italie|v",
+"MILANO|45.464|9.19|Italie|v","TURIN|45.07|7.687|Italie|v","TORINO|45.07|7.687|Italie|v","NAPLES|40.852|14.268|Italie|v","NAPOLI|40.852|14.268|Italie|v",
+"GENES|44.405|8.946|Italie|v","GENOVA|44.405|8.946|Italie|v","FLORENCE|43.77|11.256|Italie|v","FIRENZE|43.77|11.256|Italie|v","BOLOGNE|44.494|11.343|Italie|v",
+"BOLOGNA|44.494|11.343|Italie|v","PALERME|38.116|13.361|Italie|v","PALERMO|38.116|13.361|Italie|v","VERONE|45.438|10.992|Italie|v","VERONA|45.438|10.992|Italie|v",
+"PADOUE|45.406|11.877|Italie|v","PADOVA|45.406|11.877|Italie|v","TRIESTE|45.65|13.777|Italie|v","BARI|41.117|16.872|Italie|v","SICILE|37.6|14.0|Italie|r",
+"MADRID|40.417|-3.704|Espagne|v","BARCELONE|41.385|2.173|Espagne|v","BARCELONA|41.385|2.173|Espagne|v","VALENCE ESPAGNE|39.47|-0.376|Espagne|v","VALENCIA|39.47|-0.376|Espagne|v",
+"SEVILLE|37.389|-5.984|Espagne|v","SEVILLA|37.389|-5.984|Espagne|v","BILBAO|43.263|-2.935|Espagne|v","OVIEDO|43.362|-5.849|Espagne|v","GIJON|43.532|-5.661|Espagne|v",
+"PRAVIA|43.488|-6.113|Espagne|v","LA COROGNE|43.362|-8.411|Espagne|v","CORUNA|43.362|-8.411|Espagne|v","VIGO|42.24|-8.72|Espagne|v","SANTANDER|43.462|-3.81|Espagne|v",
+"MALAGA|36.721|-4.421|Espagne|v","ZARAGOZA|41.649|-0.889|Espagne|v","SARAGOSSE|41.649|-0.889|Espagne|v","ALICANTE|38.345|-0.481|Espagne|v","MURCIA|37.992|-1.131|Espagne|v",
+"ASTURIES|43.3|-5.9|Espagne|r","ASTURIAS|43.3|-5.9|Espagne|r","GALICE|42.8|-8.0|Espagne|r","CATALOGNE|41.8|1.5|Espagne|r",
+"LISBONNE|38.722|-9.139|Portugal|v","LISBOA|38.722|-9.139|Portugal|v","PORTO|41.158|-8.629|Portugal|v",
+"BERLIN|52.52|13.405|Allemagne|v","HAMBOURG|53.551|9.994|Allemagne|v","HAMBURG|53.551|9.994|Allemagne|v","MUNICH|48.137|11.576|Allemagne|v","MUNCHEN|48.137|11.576|Allemagne|v",
+"COLOGNE|50.938|6.96|Allemagne|v","KOLN|50.938|6.96|Allemagne|v","FRANCFORT|50.11|8.682|Allemagne|v","FRANKFURT|50.11|8.682|Allemagne|v","STUTTGART|48.776|9.183|Allemagne|v",
+"DUSSELDORF|51.228|6.774|Allemagne|v","DORTMUND|51.514|7.468|Allemagne|v","ESSEN|51.456|7.012|Allemagne|v","BREME|53.079|8.802|Allemagne|v","BREMEN|53.079|8.802|Allemagne|v",
+"LEIPZIG|51.34|12.375|Allemagne|v","DRESDE|51.05|13.738|Allemagne|v","DRESDEN|51.05|13.738|Allemagne|v","HANOVRE|52.375|9.732|Allemagne|v","HANNOVER|52.375|9.732|Allemagne|v",
+"NUREMBERG|49.452|11.077|Allemagne|v","SARREBRUCK|49.24|6.997|Allemagne|v","SAARBRUCKEN|49.24|6.997|Allemagne|v","FRIBOURG|47.999|7.842|Allemagne|v","FREIBURG|47.999|7.842|Allemagne|v",
+"BRUXELLES|50.85|4.352|Belgique|v","BRUSSEL|50.85|4.352|Belgique|v","LIEGE|50.633|5.567|Belgique|v|Liège","ANVERS|51.219|4.402|Belgique|v","ANTWERPEN|51.219|4.402|Belgique|v",
+"GAND|51.054|3.717|Belgique|v","GENT|51.054|3.717|Belgique|v","CHARLEROI|50.411|4.444|Belgique|v","NAMUR|50.467|4.872|Belgique|v","MONS|50.454|3.952|Belgique|v",
+"BRUGES|51.209|3.225|Belgique|v","AMSTERDAM|52.368|4.904|Pays-Bas|v","ROTTERDAM|51.924|4.478|Pays-Bas|v","LA HAYE|52.07|4.3|Pays-Bas|v","UTRECHT|52.091|5.122|Pays-Bas|v",
+"EINDHOVEN|51.441|5.47|Pays-Bas|v","GRONINGEN|53.219|6.567|Pays-Bas|v","LUXEMBOURG|49.612|6.13|Luxembourg|v",
+"GENEVE|46.204|6.143|Suisse|v","LAUSANNE|46.52|6.633|Suisse|v","ZURICH|47.377|8.541|Suisse|v","BERNE|46.948|7.447|Suisse|v","BALE|47.56|7.59|Suisse|v",
+"VIENNE AUTRICHE|48.208|16.373|Autriche|v","WIEN|48.208|16.373|Autriche|v","SALZBOURG|47.81|13.055|Autriche|v","GRAZ|47.071|15.439|Autriche|v",
+"COPENHAGUE|55.676|12.568|Danemark|v","KOBENHAVN|55.676|12.568|Danemark|v","AARHUS|56.163|10.204|Danemark|v","ODENSE|55.403|10.402|Danemark|v",
+"AALBORG|57.048|9.919|Danemark|v","ESBJERG|55.476|8.459|Danemark|v","RINGKOBING|56.09|8.244|Danemark|v|Ringkøbing","RINKKING|56.09|8.244|Danemark|v|Ringkøbing","TARRARE|45.896|4.433|France|v|Tarare",
+"SCANDINAVIE|62.0|15.0||r","STOCKHOLM|59.329|18.069|Suède|v","GOTEBORG|57.709|11.975|Suède|v","MALMO|55.605|13.004|Suède|v","OSLO|59.913|10.752|Norvège|v",
+"BERGEN|60.392|5.322|Norvège|v","HELSINKI|60.17|24.938|Finlande|v",
+"VARSOVIE|52.23|21.012|Pologne|v","WARSZAWA|52.23|21.012|Pologne|v","CRACOVIE|50.065|19.945|Pologne|v","KRAKOW|50.065|19.945|Pologne|v","GDANSK|54.352|18.646|Pologne|v",
+"WROCLAW|51.108|17.039|Pologne|v","POZNAN|52.406|16.925|Pologne|v","LODZ|51.759|19.456|Pologne|v","SZCZECIN|53.428|14.553|Pologne|v","SLAWA|51.884|16.074|Pologne|v|Sława",
+"PRAGUE|50.075|14.438|Tchéquie|v","PRAHA|50.075|14.438|Tchéquie|v","BRNO|49.195|16.607|Tchéquie|v","OSTRAVA|49.82|18.262|Tchéquie|v","BRATISLAVA|48.149|17.107|Slovaquie|v",
+"BUDAPEST|47.498|19.04|Hongrie|v","BUCAREST|44.427|26.103|Roumanie|v","SOFIA|42.698|23.322|Bulgarie|v","ATHENES|37.984|23.728|Grèce|v","ZAGREB|45.815|15.982|Croatie|v",
+"LJUBLJANA|46.056|14.506|Slovénie|v","BELGRADE|44.787|20.457|Serbie|v","KIEV|50.45|30.524|Ukraine|v","KYIV|50.45|30.524|Ukraine|v","MOSCOU|55.756|37.617|Russie (Europe)|v",
+"VILNIUS|54.687|25.28|Lituanie|v","RIGA|56.95|24.105|Lettonie|v","TALLINN|59.437|24.754|Estonie|v","REYKJAVIK|64.147|-21.942|Islande|v","VALLETTA|35.899|14.514|Malte|v",
+"ISTANBUL|41.008|28.978|Turquie d\u2019Europe|v","ANKARA|39.934|32.86|Turquie|v","RABAT|34.02|-6.84|Maroc|v","CASABLANCA|33.573|-7.59|Maroc|v","ALGER|36.754|3.059|Algérie|v",
+"TUNIS|36.806|10.181|Tunisie|v","DAKAR|14.716|-17.467|Sénégal|v","SYDNEY|-33.869|151.209|Australie|v","MELBOURNE|-37.814|144.963|Australie|v","PERTH AUSTRALIE|-31.95|115.861|Australie|v",
+"NEW YORK|40.713|-74.006|États-Unis|v","MONTREAL|45.502|-73.567|Canada|v","QUEBEC|46.813|-71.208|Canada|v","TORONTO|43.653|-79.383|Canada|v",
+"RIO DE JANEIRO|-22.907|-43.173|Brésil|v","SAO PAULO|-23.551|-46.633|Brésil|v","BUENOS AIRES|-34.604|-58.382|Argentine|v"
+];
+/* Noms de pays courants dans les carnets (français et anglais) */
+var COUNTRY_ALIAS = {"IRELAND":"Irlande","EIRE":"Irlande","NORD IRLANDE":"Irlande du Nord","NORTHERN IRELAND":"Irlande du Nord","SCOTLAND":"Écosse",
+  "ENGLAND":"Angleterre","UK":"Angleterre","ROYAUME UNI":"Angleterre","GRANDE BRETAGNE":"Angleterre","WALES":"Pays de Galles","PAYS DE GALES":"Pays de Galles","GALLES":"Pays de Galles",
+  "GERMANY":"Allemagne","DEUTSCHLAND":"Allemagne","ITALY":"Italie","ITALIA":"Italie","POLAND":"Pologne","POLSKA":"Pologne","SPAIN":"Espagne","ESPANA":"Espagne",
+  "BELGIUM":"Belgique","DENMARK":"Danemark","HOLLAND":"Pays-Bas","HOLLANDE":"Pays-Bas","NETHERLANDS":"Pays-Bas","PAYS BAS":"Pays-Bas","SWITZERLAND":"Suisse",
+  "AUSTRIA":"Autriche","REUNION":"La Réunion","REPUBLIQUE TCHEQUE":"Tchéquie","TCHEQUIE":"Tchéquie","CZECH":"Tchéquie","CZECHIA":"Tchéquie","USA":"États-Unis",
+  "ETATS UNIS":"États-Unis","UNITED STATES":"États-Unis","AUSTRALIA":"Australie","SWEDEN":"Suède","NORWAY":"Norvège","FINLAND":"Finlande","RUSSIE":"Russie (Europe)",
+  "RUSSIA":"Russie (Europe)","GREECE":"Grèce","CROATIA":"Croatie","HUNGARY":"Hongrie","ROMANIA":"Roumanie","BRAZIL":"Brésil","ARGENTINA":"Argentine",
+  "SLOVAKIA":"Slovaquie","SLOVENIA":"Slovénie","SERBIA":"Serbie","UKRAINE":"Ukraine","PORTUGAL":"Portugal","ICELAND":"Islande","CANADA":"Canada","MEXICO":"Mexique",
+  "MOROCCO":"Maroc","ALGERIA":"Algérie","TUNISIA":"Tunisie","TURKEY":"Turquie","CYPRUS":"Chypre","MALTA":"Malte","JAPAN":"Japon","CHINA":"Chine","INDIA":"Inde",
+  "NEW ZEALAND":"Nouvelle-Zélande","SOUTH AFRICA":"Afrique du Sud","CORSE":"Corse","GUADELOUPE":"Guadeloupe","MARTINIQUE":"Martinique","GUYANE":"Guyane"};
+var CC_GROUP = {"Irlande":["ie"],"Irlande du Nord":["ie","uk"],"Angleterre":["uk"],"Écosse":["uk"],"Pays de Galles":["uk"],"Île de Man":["uk"],
+  "France":["fr"],"Corse":["fr"],"Russie (Europe)":["ru"],"Russie (Asie)":["ru"],"Turquie":["tr"],"Turquie d\u2019Europe":["tr"]};
+/* ---------- Divisions CB 11 m (liste 1 à 350) ----------
+   "numéro|=Pays déjà connu" ou "numéro|Nom|iso|continent|lat|lon" */
+var CB_RAW = [
+"1|=Italie","2|=États-Unis","3|=Brésil","4|=Argentine","5|=Venezuela","6|=Colombie","7|=Pays-Bas","8|=Pérou","9|=Canada","10|=Mexique",
+"11|=Porto Rico","12|=Uruguay","13|=Allemagne","14|=France","15|=Suisse","16|=Belgique","17|=Hawaï","18|=Grèce","19|=Pays-Bas","20|=Norvège",
+"21|=Suède","22|=Guyane","23|=Jamaïque","24|=Panama","25|=Japon","26|=Angleterre","27|=Islande","28|=Honduras","29|=Irlande","30|=Espagne",
+"31|=Portugal","32|=Chili","33|=Alaska","34|=Canaries","35|=Autriche","36|=Saint-Marin","37|=République dominicaine","38|=Groenland",
+"39|Angola|ao|AF|-11.2|17.9","40|=Liechtenstein","41|=Nouvelle-Zélande","42|Liberia|lr|AF|6.4|-9.4","43|=Australie","44|=Afrique du Sud",
+"45|=Serbie","46|Allemagne (Est)|de|EU|52.5|13.4","47|=Danemark","48|=Arabie saoudite","49|=Baléares","50|=Russie (Europe)","51|=Andorre",
+"52|=Féroé","53|=Salvador","54|=Luxembourg","55|=Gibraltar","56|=Finlande","57|=Inde","58|=Malaisie orientale","59|=Dodécanèse","60|=Hong Kong",
+"61|=Équateur","62|=Guam","63|Sainte-Hélène|sh|AF|-15.97|-5.7","64|=Sénégal","65|Sierra Leone|sl|AF|8.46|-11.78","66|=Mauritanie","67|=Paraguay",
+"68|=Irlande du Nord","69|=Costa Rica","70|Samoa américaines|as|OC|-14.3|-170.7","71|Midway|um|OC|28.2|-177.4","72|=Guatemala",
+"73|Suriname|sr|SA|3.9|-56","74|=Namibie","75|=Açores","76|=Maroc","77|=Ghana","78|Zambie|zm|AF|-13.1|27.8","79|=Philippines","80|=Bolivie",
+"81|San Andrés et Providencia|co|NA|12.55|-81.7","82|Guantánamo|cu|NA|19.9|-75.1","83|Tanzanie|tz|AF|-6.4|34.9","84|=Côte d\u2019Ivoire",
+"85|Zimbabwe|zw|AF|-19|29.2","86|=Népal","87|Yémen|ye|AS|15.6|48.5","88|=Cuba","89|=Nigeria","90|=Crète","91|=Indonésie","92|=Libye","93|=Malte",
+"94|=Émirats arabes unis","95|=Mongolie","96|Tonga|to|OC|-21.2|-175.2","97|=Israël","98|=Singapour","99|=Fidji","100|=Corée du Sud",
+"101|=Papouasie-Nouvelle-Guinée","102|=Koweït","103|=Haïti","104|=Corse","105|Botswana|bw|AF|-22.3|24.7","106|=Ceuta et Melilla","107|=Monaco",
+"108|=Écosse","109|=Hongrie","110|=Chypre","111|=Jordanie","112|=Liban","113|=Malaisie occidentale","114|=Pakistan","115|=Qatar","116|=Turquie",
+"117|=Égypte","118|Gambie|gm|AF|13.4|-15.3","119|=Madère","120|Antigua-et-Barbuda|ag|NA|17.1|-61.8","121|=Bahamas","122|=Barbade","123|=Bermudes",
+"124|Saint-Paul et Amsterdam|tf|AF|-37.8|77.6","125|Îles Caïmans|ky|NA|19.3|-81.3","126|=Nicaragua","127|=Îles Vierges US",
+"128|Îles Vierges britanniques|vg|NA|18.4|-64.6","129|Macquarie|au|OC|-54.6|158.9","130|Norfolk|nf|OC|-29.04|167.95","131|Guyana|gy|SA|4.9|-58.9",
+"132|Îles Marshall|mh|OC|7.1|171.2","133|Mariannes du Nord|mp|OC|15.2|145.75","134|Palaos|pw|OC|7.5|134.6","135|Îles Salomon|sb|OC|-9.4|160",
+"136|=Martinique","137|=Île de Man","138|=Vatican","139|Yémen du Sud|ye|AS|12.8|45","140|Antarctique||AN|-75|0","141|=Saint-Pierre-et-Miquelon",
+"142|Lesotho|ls|AF|-29.6|28.2","143|Sainte-Lucie|lc|NA|13.9|-61","144|Île de Pâques|cl|SA|-27.1|-109.35","145|Galápagos|ec|SA|-0.7|-90.5",
+"146|=Algérie","147|=Tunisie","148|Ascension|sh|AF|-7.95|-14.36","149|Laquedives|in|AS|10.6|72.6","150|=Bahreïn","151|=Irak",
+"152|Maldives|mv|AS|3.2|73.2","153|=Thaïlande","154|=Iran","155|=Taïwan","156|=Cameroun","157|Montserrat|ms|NA|16.75|-62.2",
+"158|=Trinité-et-Tobago","159|Somalie|so|AF|5.2|46.2","160|Soudan|sd|AF|15.5|32.5","161|=Pologne","162|=RD Congo","163|=Pays de Galles",
+"164|=Togo","165|=Sardaigne","166|Sint Maarten, Saba, Saint-Eustache|sx|NA|18.04|-63.07","167|=Jersey","168|=Maurice","169|=Guernesey",
+"170|=Burkina Faso","171|=Svalbard","172|=Nouvelle-Calédonie","173|=La Réunion","174|Ouganda|ug|AF|1.4|32.3","175|Tchad|td|AF|15.5|18.7",
+"176|Centrafrique|cf|AF|6.6|20.9","177|=Sri Lanka","178|=Bulgarie","179|Tchécoslovaquie|cz|EU|49.8|15.5","180|=Oman","181|=Syrie",
+"182|Guinée|gn|AF|9.9|-9.7","183|=Bénin","184|Burundi|bi|AF|-3.4|29.9","185|Comores|km|AF|-11.7|43.3","186|Djibouti|dj|AF|11.6|43.15","187|=Kenya",
+"188|=Madagascar","189|=Mayotte","190|Seychelles|sc|AF|-4.68|55.5","191|Eswatini|sz|AF|-26.5|31.5","192|Île Cocos|cr|NA|5.53|-87.06",
+"193|Îles Cocos (Keeling)|cc|OC|-12.19|96.83","194|Dominique|dm|NA|15.4|-61.37","195|Grenade|gd|NA|12.1|-61.7","196|=Guadeloupe",
+"197|Vanuatu|vu|OC|-17.7|168.3","198|=Malouines","199|Guinée équatoriale|gq|AF|1.6|10.3","200|Shetland du Sud||AN|-62|-58","201|=Polynésie française",
+"202|Bhoutan|bt|AS|27.5|90.4","203|=Chine","204|Mozambique|mz|AF|-18.7|35.5","205|=Cap-Vert","206|Éthiopie|et|AF|9.1|40.5","207|=Saint-Martin",
+"208|Glorieuses|tf|AF|-11.55|47.3","209|Juan de Nova et Europa|tf|AF|-17.05|42.7","210|=Wallis-et-Futuna","211|=Jan Mayen","212|=Åland",
+"213|=Market Reef","214|=Congo","215|=Gabon","216|=Mali","217|Île Christmas|cx|OC|-10.5|105.7","218|Belize|bz|NA|17.2|-88.5",
+"219|Anguilla|ai|NA|18.22|-63.07","220|Saint-Vincent|vc|NA|13.25|-61.2","221|Orcades du Sud||AN|-60.6|-45.5","222|Sandwich du Sud|gs|AN|-57.8|-26.5",
+"223|Samoa|ws|OC|-13.76|-172.1","224|Kiribati Ouest|ki|OC|1.45|173","225|Brunei|bn|OC|4.5|114.7","226|Malawi|mw|AF|-13.25|34.3",
+"227|Rwanda|rw|AF|-1.94|29.9","228|Chagos|io|AF|-7.3|72.4","229|Île Heard|hm|AF|-53.1|73.5","230|Micronésie|fm|OC|6.9|158.2",
+"231|Rochers Saint-Pierre et Saint-Paul|br|SA|0.92|-29.35","232|=Aruba","233|=Roumanie","234|Afghanistan|af|AS|33.9|67.7",
+"235|Genève (UIT)|ch|EU|46.2|6.14","236|=Bangladesh","237|Birmanie|mm|AS|21.9|95.95","238|Cambodge|kh|AS|12.6|104.99","239|Laos|la|AS|19.86|102.5",
+"240|Macao|mo|AS|22.2|113.55","241|Spratleys||AS|10|114","242|=Viêt Nam","243|Agaléga et Saint-Brandon|mu|AF|-10.4|56.6","244|Annobón|gq|AF|-1.43|5.63",
+"245|Niger|ne|AF|17.6|8.1","246|Sao Tomé-et-Principe|st|AF|0.19|6.6","247|Navassa|um|NA|18.4|-75","248|Turques-et-Caïques|tc|NA|21.7|-71.8",
+"249|Cook du Nord|ck|OC|-9|-161","250|Îles Cook|ck|OC|-21.2|-159.8","251|=Albanie","252|Revillagigedo|mx|NA|18.8|-111","253|Andaman et Nicobar|in|AS|11.7|92.7",
+"254|Mont Athos|gr|EU|40.16|24.33","255|Kerguelen|tf|AF|-49.3|69.3","256|Prince-Édouard et Marion|za|AF|-46.9|37.75","257|Rodrigues|mu|AF|-19.7|63.4",
+"258|Tristan da Cunha|sh|AF|-37.1|-12.3","259|Tromelin|tf|AF|-15.9|54.5","260|Baker et Howland|um|OC|0.5|-176.5","261|Chatham|nz|OC|-44|-176.5",
+"262|Johnston|um|OC|16.73|-169.5","263|Kermadec|nz|OC|-29.25|-177.9","264|Kingman Reef|um|OC|6.4|-162.4","265|Kiribati centre|ki|OC|-2.8|-171.7",
+"266|Kiribati Est|ki|OC|1.87|-157.4","267|Kure|um|OC|28.4|-178.3","268|Lord Howe|au|OC|-31.55|159.08","269|Mellish Reef|au|OC|-17.4|155.9",
+"270|Minami-Torishima|jp|OC|24.29|153.98","271|Nauru|nr|OC|-0.52|166.93","272|Niue|nu|OC|-19.05|-169.87","273|Palmyra et Jarvis|um|OC|5.9|-162.1",
+"274|Pitcairn|pn|OC|-25.07|-130.1","275|Tokelau|tk|OC|-9.2|-171.8","276|Tuvalu|tv|OC|-8.5|179.2","277|Île de Sable|ca|NA|43.93|-59.9",
+"278|Wake|um|OC|19.28|166.65","279|Willis|au|OC|-16.3|149.97","280|Île Aves|ve|NA|15.67|-63.62","281|Ogasawara|jp|AS|27.1|142.2",
+"282|Auckland et Campbell|nz|OC|-50.7|166.1","283|Saint-Christophe-et-Niévès|kn|NA|17.3|-62.7","284|Île Saint-Paul|ca|NA|47.2|-60.15",
+"285|Fernando de Noronha|br|SA|-3.85|-32.42","286|Juan Fernández|cl|SA|-33.6|-78.85","287|Malpelo|co|SA|4|-81.6","288|San Félix et San Ambrosio|cl|SA|-26.3|-80.1",
+"289|Géorgie du Sud|gs|SA|-54.4|-36.6","290|Trindade et Martim Vaz|br|SA|-20.5|-29.3","291|Dhekelia et Akrotiri|cy|AS|34.6|33",
+"292|Abu Ail et Jabal at Tair|ye|AS|14.1|42.8","293|Guinée-Bissau|gw|AF|11.8|-15.2","294|Île Pierre-Ier||AN|-68.8|-90.6","295|Soudan du Sud|ss|AF|6.9|31.3",
+"296|Clipperton|fr|NA|10.3|-109.2","297|Bouvet|bv|AF|-54.4|3.4","298|Crozet|tf|AF|-46.4|51.8","299|Desecheo|pr|NA|18.38|-67.48",
+"300|Sahara occidental|eh|AF|24.2|-12.9","301|=Arménie","302|=Russie (Asie)","303|=Azerbaïdjan","304|=Estonie","305|Terre François-Joseph|ru|EU|80.6|54",
+"306|=Géorgie","307|=Kaliningrad","308|=Kazakhstan","309|Kirghizistan|kg|AS|41.2|74.8","310|=Lettonie","311|=Lituanie","312|=Moldavie",
+"313|Tadjikistan|tj|AS|38.9|71.3","314|Turkménistan|tm|AS|38.97|59.56","315|=Ukraine","316|Ouzbékistan|uz|AS|41.4|64.6","317|=Biélorussie",
+"318|Ordre de Malte|it|EU|41.9|12.48","319|ONU New York|us|NA|40.75|-73.97","320|Banaba|ki|OC|-0.86|169.53","321|Conway Reef|fj|OC|-21.75|174.6",
+"322|Walvis Bay|na|AF|-22.95|14.5","323|=Yémen","324|Penguin Island|na|AF|-26.6|15.15","325|Rotuma|fj|OC|-12.5|177.07","326|Malyj Vysotskij|ru|EU|60.6|28.6",
+"327|=Slovénie","328|=Croatie","329|=Tchéquie","330|=Slovaquie","331|=Bosnie-Herzégovine","332|=Macédoine du Nord","333|Érythrée|er|AF|15.2|39.8",
+"334|Corée du Nord|kp|AS|40.3|127.5","335|Pratas|tw|AS|20.7|116.7","336|Scarborough|ph|AS|15.15|117.76","337|Îles Australes|pf|OC|-23.4|-149.5",
+"338|Marquises|pf|OC|-9|-139.5","339|Temotu|sb|OC|-10.7|166","340|Palestine|ps|AS|31.9|35.2","341|Timor oriental|tl|OC|-8.87|125.7",
+"342|Chesterfield|nc|OC|-19.9|158.3","343|Ducie|pn|OC|-24.67|-124.79","344|=Monténégro","345|Swains|as|OC|-11.05|-171.08","346|=Saint-Barthélemy",
+"347|=Curaçao","348|Sint Maarten|sx|NA|18.04|-63.07","349|Saba et Saint-Eustache|bq|NA|17.5|-63","350|=Bonaire"
+];
+
+/* ---------- Fuseaux horaires ---------- */
+var ISO_TZ = {fr:"Europe/Paris",de:"Europe/Berlin",be:"Europe/Brussels",nl:"Europe/Amsterdam",lu:"Europe/Luxembourg",ch:"Europe/Zurich",li:"Europe/Vaduz",
+at:"Europe/Vienna",mc:"Europe/Monaco",ad:"Europe/Andorra",gb:"Europe/London",im:"Europe/Isle_of_Man",je:"Europe/Jersey",gg:"Europe/Guernsey",ie:"Europe/Dublin",
+es:"Europe/Madrid",pt:"Europe/Lisbon",it:"Europe/Rome",sm:"Europe/San_Marino",va:"Europe/Vatican",mt:"Europe/Malta",gr:"Europe/Athens",cy:"Asia/Nicosia",
+tr:"Europe/Istanbul",bg:"Europe/Sofia",ro:"Europe/Bucharest",hu:"Europe/Budapest",cz:"Europe/Prague",sk:"Europe/Bratislava",pl:"Europe/Warsaw",
+lt:"Europe/Vilnius",lv:"Europe/Riga",ee:"Europe/Tallinn",fi:"Europe/Helsinki",ax:"Europe/Mariehamn",se:"Europe/Stockholm",no:"Europe/Oslo",
+sj:"Arctic/Longyearbyen",dk:"Europe/Copenhagen",gl:"America/Nuuk",fo:"Atlantic/Faroe",is:"Atlantic/Reykjavik",hr:"Europe/Zagreb",si:"Europe/Ljubljana",
+ba:"Europe/Sarajevo",rs:"Europe/Belgrade",me:"Europe/Podgorica",mk:"Europe/Skopje",al:"Europe/Tirane",xk:"Europe/Belgrade",md:"Europe/Chisinau",
+ua:"Europe/Kiev",by:"Europe/Minsk",ge:"Asia/Tbilisi",am:"Asia/Yerevan",az:"Asia/Baku",gi:"Europe/Gibraltar",il:"Asia/Jerusalem",lb:"Asia/Beirut",
+jo:"Asia/Amman",sa:"Asia/Riyadh",ae:"Asia/Dubai",qa:"Asia/Qatar",kw:"Asia/Kuwait",om:"Asia/Muscat",bh:"Asia/Bahrain",ir:"Asia/Tehran",iq:"Asia/Baghdad",
+sy:"Asia/Damascus",ye:"Asia/Aden",ps:"Asia/Hebron",eg:"Africa/Cairo",ma:"Africa/Casablanca",dz:"Africa/Algiers",tn:"Africa/Tunis",ly:"Africa/Tripoli",
+sn:"Africa/Dakar",za:"Africa/Johannesburg",ke:"Africa/Nairobi",ng:"Africa/Lagos",na:"Africa/Windhoek",ml:"Africa/Bamako",ci:"Africa/Abidjan",
+cm:"Africa/Douala",mg:"Indian/Antananarivo",mu:"Indian/Mauritius",gh:"Africa/Accra",bf:"Africa/Ouagadougou",bj:"Africa/Porto-Novo",tg:"Africa/Lome",
+ga:"Africa/Libreville",cg:"Africa/Brazzaville",cd:"Africa/Kinshasa",mr:"Africa/Nouakchott",cv:"Atlantic/Cape_Verde",ao:"Africa/Luanda",lr:"Africa/Monrovia",
+sh:"Atlantic/St_Helena",sl:"Africa/Freetown",zm:"Africa/Lusaka",tz:"Africa/Dar_es_Salaam",zw:"Africa/Harare",bw:"Africa/Gaborone",gm:"Africa/Banjul",
+ls:"Africa/Maseru",so:"Africa/Mogadishu",sd:"Africa/Khartoum",ss:"Africa/Juba",ug:"Africa/Kampala",td:"Africa/Ndjamena",cf:"Africa/Bangui",gn:"Africa/Conakry",
+bi:"Africa/Bujumbura",km:"Indian/Comoro",dj:"Africa/Djibouti",sc:"Indian/Mahe",sz:"Africa/Mbabane",gq:"Africa/Malabo",mz:"Africa/Maputo",
+et:"Africa/Addis_Ababa",mw:"Africa/Blantyre",rw:"Africa/Kigali",ne:"Africa/Niamey",st:"Africa/Sao_Tome",gw:"Africa/Bissau",er:"Africa/Asmara",
+eh:"Africa/El_Aaiun",pr:"America/Puerto_Rico",vi:"America/St_Thomas",gu:"Pacific/Guam",cu:"America/Havana",do:"America/Santo_Domingo",
+ht:"America/Port-au-Prince",jm:"America/Jamaica",bs:"America/Nassau",bb:"America/Barbados",tt:"America/Port_of_Spain",cw:"America/Curacao",
+bq:"America/Kralendijk",aw:"America/Aruba",bm:"Atlantic/Bermuda",cr:"America/Costa_Rica",pa:"America/Panama",gt:"America/Guatemala",
+hn:"America/Tegucigalpa",sv:"America/El_Salvador",ni:"America/Managua",ar:"America/Argentina/Buenos_Aires",cl:"America/Santiago",
+uy:"America/Montevideo",ve:"America/Caracas",co:"America/Bogota",pe:"America/Lima",ec:"America/Guayaquil",bo:"America/La_Paz",py:"America/Asuncion",
+fk:"Atlantic/Stanley",sr:"America/Paramaribo",gy:"America/Guyana",ag:"America/Antigua",ky:"America/Cayman",vg:"America/Tortola",lc:"America/St_Lucia",
+ms:"America/Montserrat",sx:"America/Lower_Princes",dm:"America/Dominica",gd:"America/Grenada",bz:"America/Belize",ai:"America/Anguilla",
+vc:"America/St_Vincent",tc:"America/Grand_Turk",kn:"America/St_Kitts",jp:"Asia/Tokyo",cn:"Asia/Shanghai",tw:"Asia/Taipei",kr:"Asia/Seoul",
+kp:"Asia/Pyongyang",in:"Asia/Kolkata",th:"Asia/Bangkok",vn:"Asia/Ho_Chi_Minh",ph:"Asia/Manila",my:"Asia/Kuala_Lumpur",sg:"Asia/Singapore",
+hk:"Asia/Hong_Kong",mo:"Asia/Macau",pk:"Asia/Karachi",mn:"Asia/Ulaanbaatar",lk:"Asia/Colombo",np:"Asia/Kathmandu",bd:"Asia/Dhaka",
+mv:"Indian/Maldives",bt:"Asia/Thimphu",mm:"Asia/Yangon",kh:"Asia/Phnom_Penh",la:"Asia/Vientiane",af:"Asia/Kabul",kg:"Asia/Bishkek",tj:"Asia/Dushanbe",
+tm:"Asia/Ashgabat",uz:"Asia/Tashkent",tl:"Asia/Dili",bn:"Asia/Brunei",nz:"Pacific/Auckland",fj:"Pacific/Fiji",pg:"Pacific/Port_Moresby",
+gp:"America/Guadeloupe",mq:"America/Martinique",gf:"America/Cayenne",re:"Indian/Reunion",yt:"Indian/Mayotte",nc:"Pacific/Noumea",pf:"Pacific/Tahiti",
+pm:"America/Miquelon",mf:"America/Marigot",bl:"America/St_Barthelemy",wf:"Pacific/Wallis",to:"Pacific/Tongatapu",ws:"Pacific/Apia",vu:"Pacific/Efate",
+sb:"Pacific/Guadalcanal",mh:"Pacific/Majuro",mp:"Pacific/Saipan",pw:"Pacific/Palau",fm:"Pacific/Pohnpei",nr:"Pacific/Nauru",nu:"Pacific/Niue",
+tk:"Pacific/Fakaofo",tv:"Pacific/Funafuti",ck:"Pacific/Rarotonga",pn:"Pacific/Pitcairn",nf:"Pacific/Norfolk",cx:"Indian/Christmas",cc:"Indian/Cocos",
+io:"Indian/Chagos",as:"Pacific/Pago_Pago"};
+var NAME_TZ = {"Alaska":"America/Anchorage","Hawaï":"Pacific/Honolulu","Kaliningrad":"Europe/Kaliningrad","Canaries":"Atlantic/Canary",
+"Açores":"Atlantic/Azores","Madère":"Atlantic/Madeira","Malaisie orientale":"Asia/Kuching","Île de Pâques":"Pacific/Easter",
+"Galápagos":"Pacific/Galapagos","Ceuta et Melilla":"Africa/Ceuta","Chatham":"Pacific/Chatham","Marquises":"Pacific/Marquesas",
+"Kerguelen":"Indian/Kerguelen","Lord Howe":"Australia/Lord_Howe","Fernando de Noronha":"America/Noronha","Groenland":"America/Nuuk"};
+function tzByLon(iso, lat, lon){
+  if (iso === "us") return lon > -87 ? "America/New_York" : lon > -101 ? "America/Chicago" : lon > -115 ? "America/Denver" : "America/Los_Angeles";
+  if (iso === "ca") return lon > -64 ? "America/Halifax" : lon > -90 ? "America/Toronto" : lon > -102 ? "America/Winnipeg" : lon > -120 ? "America/Edmonton" : "America/Vancouver";
+  if (iso === "au") return lon > 141 ? "Australia/Sydney" : lon > 129 ? "Australia/Adelaide" : "Australia/Perth";
+  if (iso === "br") return lon > -45 ? "America/Sao_Paulo" : lon > -60 ? "America/Manaus" : "America/Rio_Branco";
+  if (iso === "mx") return lon > -105 ? "America/Mexico_City" : "America/Tijuana";
+  if (iso === "id") return lon < 115 ? "Asia/Jakarta" : lon < 127 ? "Asia/Makassar" : "Asia/Jayapura";
+  if (iso === "kz") return lon < 60 ? "Asia/Aqtobe" : "Asia/Almaty";
+  if (iso === "ru") return lon < 50 ? "Europe/Moscow" : lon < 70 ? "Asia/Yekaterinburg" : lon < 85 ? "Asia/Omsk" : lon < 100 ? "Asia/Krasnoyarsk" : lon < 115 ? "Asia/Irkutsk" : lon < 135 ? "Asia/Yakutsk" : lon < 150 ? "Asia/Vladivostok" : "Asia/Kamchatka";
+  return null;
+}
+/* Lecteur Access (.accdb/.mdb Jet4/ACE) minimal, sans dépendance */
+function readAccess(ab){
+  var u8 = new Uint8Array(ab), dv = new DataView(ab), PS = 4096;
+  if (u8.length < PS * 3) throw new Error("Fichier trop court pour une base Access");
+  if (u8[0x14] === 0) throw new Error("Format Access 97 non pris en charge");
+  var N = Math.floor(u8.length / PS);
+  var td16 = new TextDecoder("utf-16le");
+  function txt(b){
+    if (b.length >= 2 && b[0] === 0xFF && b[1] === 0xFE) {
+      var out = "", comp = true, i = 2;
+      while (i < b.length) {
+        if (b[i] === 0) { comp = !comp; i++; continue; }
+        if (comp) { out += String.fromCharCode(b[i]); i++; }
+        else { out += td16.decode(b.subarray(i, i + 2)); i += 2; }
+      }
+      return out;
+    }
+    return td16.decode(b);
+  }
+  function u32(o){ return dv.getUint32(o, true); }
+  function tdef(p){
+    var parts = [], first = true, guard = 0;
+    while (p && guard++ < 64) {
+      var o = p * PS;
+      if (u8[o] !== 2) throw new Error("Structure de table inattendue");
+      parts.push(first ? u8.subarray(o, o + PS) : u8.subarray(o + 8, o + PS));
+      first = false; p = u32(o + 4);
+    }
+    var len = 0; parts.forEach(function(x){ len += x.length; });
+    var b = new Uint8Array(len), k = 0;
+    parts.forEach(function(x){ b.set(x, k); k += x.length; });
+    var bv = new DataView(b.buffer);
+    var ncol = bv.getUint16(45, true), nreal = bv.getUint32(51, true), o2 = 63 + nreal * 12, cols = [];
+    for (var i = 0; i < ncol; i++) {
+      cols.push({type:b[o2], num:bv.getUint16(o2 + 5, true), vnum:bv.getUint16(o2 + 7, true), flags:b[o2 + 15],
+        foff:bv.getUint16(o2 + 21, true), size:bv.getUint16(o2 + 23, true)});
+      o2 += 25;
+    }
+    cols.forEach(function(c){ var L = bv.getUint16(o2, true); c.name = txt(b.subarray(o2 + 2, o2 + 2 + L)); o2 += 2 + L; });
+    return cols;
+  }
+  function rowBytes(page, row){
+    var o = page * PS, n = dv.getUint16(o + 12, true);
+    if (row >= n) return null;
+    var st = dv.getUint16(o + 14 + 2 * row, true) & 0x1fff;
+    var en = row === 0 ? PS : dv.getUint16(o + 14 + 2 * (row - 1), true) & 0x1fff;
+    return u8.subarray(o + st, o + en);
+  }
+  function memo(raw){
+    if (raw.length < 12) return "";
+    var rv = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
+    var L = rv.getUint32(0, true), fl = L >>> 24; L = L & 0xffffff;
+    var data;
+    if (fl & 0x80) data = raw.subarray(12, 12 + L);
+    else {
+      var ptr = rv.getUint32(4, true);
+      if (fl & 0x40) data = rowBytes(ptr >>> 8, ptr & 0xff).subarray(0, L);
+      else {
+        var acc = [], tot = 0, guard = 0;
+        while (ptr && tot < L && guard++ < 1000) {
+          var r = rowBytes(ptr >>> 8, ptr & 0xff); if (!r) break;
+          var r2 = new DataView(r.buffer, r.byteOffset, r.byteLength);
+          ptr = r2.getUint32(0, true); acc.push(r.subarray(4)); tot += r.length - 4;
+        }
+        data = new Uint8Array(tot); var k = 0;
+        acc.forEach(function(x){ data.set(x, k); k += x.length; });
+        data = data.subarray(0, L);
+      }
+    }
+    return txt(data);
+  }
+  function val(c, raw){
+    var rv = new DataView(raw.buffer, raw.byteOffset, raw.byteLength);
+    switch (c.type) {
+      case 2: return raw[0];
+      case 3: return rv.getInt16(0, true);
+      case 4: return rv.getInt32(0, true);
+      case 5: return Number(rv.getBigInt64(0, true)) / 10000;
+      case 6: return rv.getFloat32(0, true);
+      case 7: return rv.getFloat64(0, true);
+      case 8:
+        var v = rv.getFloat64(0, true);
+        var d = new Date(Date.UTC(1899, 11, 30) + Math.round(v * 86400) * 1000);
+        return isNaN(d.getTime()) ? null : d.toISOString().slice(0, 19);
+      case 10: return txt(raw);
+      case 12: return memo(raw);
+      default: return null;
+    }
+  }
+  function parse(rb, cols){
+    var rv = new DataView(rb.buffer, rb.byteOffset, rb.byteLength);
+    var ncols = rv.getUint16(0, true), bm = (ncols + 7) >> 3, end = rb.length;
+    var mask = rb.subarray(end - bm, end);
+    var present = function(num){ return (num >> 3) < mask.length ? (mask[num >> 3] >> (num & 7)) & 1 : 0; };
+    var nvar = rv.getUint16(end - bm - 2, true), voffs = [];
+    for (var i = 0; i <= nvar; i++) voffs.push(rv.getUint16(end - bm - 4 - 2 * i, true));
+    var rec = {};
+    cols.forEach(function(c){
+      if (c.type === 1) { rec[c.name] = !!present(c.num); return; }
+      if (!present(c.num)) { rec[c.name] = null; return; }
+      var raw;
+      if (c.flags & 1) raw = rb.subarray(2 + c.foff, 2 + c.foff + c.size);
+      else {
+        if (c.vnum >= nvar) { rec[c.name] = null; return; }
+        raw = rb.subarray(voffs[c.vnum], voffs[c.vnum + 1]);
+      }
+      try { rec[c.name] = val(c, raw); } catch (e) { rec[c.name] = null; }
+    });
+    return rec;
+  }
+  function rows(tp, cols){
+    var out = [];
+    for (var p = 0; p < N; p++) {
+      var o = p * PS;
+      if (u8[o] !== 1 || u32(o + 4) !== tp) continue;
+      var n = dv.getUint16(o + 12, true);
+      for (var r = 0; r < n; r++) {
+        var off = dv.getUint16(o + 14 + 2 * r, true), rb;
+        if (off & 0x8000) continue;
+        if (off & 0x4000) {
+          var pr = rowBytes(p, r), pv = new DataView(pr.buffer, pr.byteOffset, pr.byteLength), ptr = pv.getUint32(0, true);
+          rb = rowBytes(ptr >>> 8, ptr & 0xff);
+        } else rb = rowBytes(p, r);
+        if (!rb) continue;
+        try { out.push(parse(rb, cols)); } catch (e) {}
+      }
+    }
+    return out;
+  }
+  var catCols = tdef(2), tables = [];
+  rows(2, catCols).forEach(function(r){
+    var fl = (r.Flags || 0) >>> 0;
+    if (r.Type === 1 && r.Name && !/^(MSys|f_)/i.test(r.Name) && (fl & 0x80000002) === 0) {
+      try {
+        var tp = r.Id & 0xffffff, cols = tdef(tp);
+        tables.push({name:r.Name, cols:cols.map(function(c){ return c.name; }), types:cols.map(function(c){ return c.type; }), rows:rows(tp, cols)});
+      } catch (e) {}
+    }
+  });
+  return tables;
+}
+/* ---------- Pays, divisions CB, géocodage ---------- */
+var COUNTRY_BY_NAME = {};
+DX_RAW.forEach(function(line){ var a = line.split("|"); COUNTRY_BY_NAME[a[1]] = {name:a[1], iso:a[2], cont:a[3], cq:a[4], lat:+a[5], lon:+a[6]}; });
+[RU_EU, RU_AS, RU_KA].forEach(function(e){ COUNTRY_BY_NAME[e.name] = e; });
+var CB_DIV = {};
+CB_RAW.forEach(function(l){ var a = l.split("|"); if (a[1].charAt(0) !== "=") { if (!COUNTRY_BY_NAME[a[1]]) COUNTRY_BY_NAME[a[1]] = {name:a[1], iso:a[2], cont:a[3], cq:"", lat:+a[4], lon:+a[5]}; CB_DIV[a[0]] = a[1]; } });
+CB_RAW.forEach(function(l){ var a = l.split("|"); if (a[1].charAt(0) === "=" && COUNTRY_BY_NAME[a[1].slice(1)]) CB_DIV[a[0]] = a[1].slice(1); });
+function norm(t){ return String(t || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toUpperCase().replace(/[^A-Z0-9]+/g, " ").trim(); }
+var ALIAS = [];
+Object.keys(COUNTRY_BY_NAME).forEach(function(n){ ALIAS.push([norm(n), n]); });
+Object.keys(COUNTRY_ALIAS).forEach(function(k){ if (COUNTRY_BY_NAME[COUNTRY_ALIAS[k]]) ALIAS.push([norm(k), COUNTRY_ALIAS[k]]); });
+ALIAS.sort(function(a, b){ return b[0].length - a[0].length; });
+function hasWord(text, key){ return (" " + text + " ").indexOf(" " + key + " ") >= 0; }
+function countryFromText(t){
+  var n = norm(t); if (!n) return null;
+  for (var i = 0; i < ALIAS.length; i++) if (hasWord(n, ALIAS[i][0])) return COUNTRY_BY_NAME[ALIAS[i][1]];
+  return null;
+}
+function normCall(c){ return String(c || "").toUpperCase().replace(/[^A-Z0-9\/ ]/g, "").replace(/\s+/g, " ").trim(); }
+function isCB(c){ c = normCall(c); return /^[0-9]{1,3} [A-Z]/.test(c) || /^[0-9]{2,3}[A-Z]/.test(c); }
+function cbDiv(c){ var m = normCall(c).match(/^([0-9]{1,3})/); return m ? m[1] : ""; }
+function callKey(c){
+  var n = normCall(c);
+  if (isCB(n)) return n.replace(/ /g, "");
+  var sc = splitCall(n.replace(/ /g, ""));
+  return sc ? sc.base : n.replace(/ /g, "");
+}
+function callOk(c){
+  var n = normCall(c);
+  if (isCB(n)) return n.replace(/ /g, "").length >= 3;
+  var sc = splitCall(n.replace(/ /g, "")); return !!sc && validCall(sc.base);
+}
+var LEARN = {};
+function detectCountry(call, pays){
+  var c = countryFromText(pays);
+  var n = normCall(call);
+  if (n && !isCB(n)) {
+    var dxh = dxccOf(splitCall(n.replace(/ /g, "")));
+    if (dxh) return Object.assign({src:"préfixe", conflict: (c && c.name !== dxh.name && !sameArea(c.name, dxh)) ? c.name : ""}, dxh);
+  }
+  if (c) return Object.assign({src:"pays", p:""}, c);
+  if (!n) return null;
+  if (isCB(n)) {
+    var d = cbDiv(n), name = CB_DIV[d] || LEARN[d], e = name && COUNTRY_BY_NAME[name];
+    return e ? Object.assign({src:"division", p:"division " + d}, e) : null;
+  }
+  return null;
+}
+var PLACES = PLACE_RAW.map(function(l){ var a = l.split("|"); return {k:norm(a[0]), lat:+a[1], lon:+a[2], cc:a[3], kind:a[4] === "r" ? "région" : "ville", label:a[5] || null}; });
+var DEPS = {}, DEPNAMES = [];
+DEP_RAW.forEach(function(l){ var a = l.split("|"); var e = {num:a[0], name:a[1], lat:+a[2], lon:+a[3]}; DEPS[a[0]] = e; DEPNAMES.push({k:norm(a[1]), e:e}); });
+DEPNAMES.sort(function(a, b){ return b.k.length - a.k.length; });
+function sameArea(cc, ctry){
+  if (!cc || !ctry) return true;
+  if (cc === ctry.name) return true;
+  var g1 = CC_GROUP[cc] || [], g2 = CC_GROUP[ctry.name] || [];
+  return g1.some(function(g){ return g2.indexOf(g) >= 0; });
+}
+function findPlace(text, ctry, kind){
+  var best = null;
+  PLACES.forEach(function(p){
+    if (p.kind !== kind) return;
+    var pos = (" " + text + " ").indexOf(" " + p.k + " ");
+    if (pos < 0 || !sameArea(p.cc, ctry)) return;
+    if (!best || pos < best.pos || (pos === best.pos && p.k.length > best.p.k.length)) best = {pos:pos, p:p};
+  });
+  return best ? best.p : null;
+}
+function isFranceLike(ctry){ return !ctry || ["France","Corse","Guadeloupe","Martinique","Guyane","La Réunion","Mayotte"].indexOf(ctry.name) >= 0; }
+function titleCase(s){ return s.toLowerCase().replace(/(^|[\s\-'])([a-zà-ÿ])/g, function(m, a, b){ return a + b.toUpperCase(); }); }
+function geoOf(q){
+  var ll = locToLL(q.loc);
+  if (ll) return {lat:ll.lat, lon:ll.lon, prec:"locator", label:fmtLoc(q.loc), cc:nearestCountry(ll.lat, ll.lon)};
+  var ctry = detectCountry(q.call, q.pays);
+  var paysIsCountry = !!countryFromText(q.pays);
+  var text = norm((q.qth || "") + " " + (paysIsCountry ? "" : (q.pays || "")));
+  if (text) {
+    var depHit = null;
+    if (isFranceLike(ctry)) {
+      for (var j = 0; j < DEPNAMES.length; j++) if (DEPNAMES[j].k.indexOf(" ") > 0 && hasWord(text, DEPNAMES[j].k)) { depHit = DEPNAMES[j].e; text = (" " + text + " ").replace(" " + DEPNAMES[j].k + " ", " ").trim(); break; }
+    }
+    var v = findPlace(text, ctry, "ville");
+    if (v) return {lat:v.lat, lon:v.lon, prec:"ville", label:v.label || titleCase(v.k), cc:v.cc || (ctry ? ctry.name : "")};
+    if (isFranceLike(ctry)) {
+      var raw = String((q.qth || "") + " " + (q.pays || "")).toUpperCase();
+      var m = raw.match(/D[EÉ]P(?:ARTEMENT|T)?\.?\s*:?\s*(2A|2B|97[1-6]|[0-9]{2})/);
+      if (!m && depHit) m = [0, depHit.num];
+      if (m && DEPS[m[1]]) { var d = DEPS[m[1]]; return {lat:d.lat, lon:d.lon, prec:"département", label:d.name + " (" + d.num + ")", cc:"France"}; }
+      for (var i = 0; i < DEPNAMES.length; i++) if (hasWord(text, DEPNAMES[i].k)) {
+        var e = DEPNAMES[i].e; return {lat:e.lat, lon:e.lon, prec:"département", label:e.name + " (" + e.num + ")", cc:"France"};
+      }
+    }
+    var r = findPlace(text, ctry, "région");
+    if (r) return {lat:r.lat, lon:r.lon, prec:"région", label:r.label || titleCase(r.k), cc:r.cc || (ctry ? ctry.name : "")};
+  }
+  if (ctry && ctry.lat !== null && ctry.lat !== undefined) return {lat:ctry.lat, lon:ctry.lon, prec:"pays", label:ctry.name, cc:ctry.name};
+  return null;
+}
+function geoText(t){ return geoOf({call:"", qth:t, pays:t, loc:""}); }
+function llToLoc(lat, lon){
+  lon += 180; lat += 90;
+  var A = 65;
+  return String.fromCharCode(A + Math.floor(lon / 20), A + Math.floor(lat / 10)) + Math.floor((lon % 20) / 2) + Math.floor(lat % 10) +
+    String.fromCharCode(97 + Math.floor((lon % 2) * 12), 97 + Math.floor((lat % 1) * 24));
+}
+
+var NEAR_CACHE = {};
+function nearestCountry(lat, lon){
+  var key = lat.toFixed(1) + "," + lon.toFixed(1);
+  if (key in NEAR_CACHE) return NEAR_CACHE[key];
+  var best = null, bd = 1e9, here = {lat:lat, lon:lon};
+  PLACES.forEach(function(p){ if (!p.cc) return; var d = distBrg(here, p).d; if (d < bd) { bd = d; best = p.cc; } });
+  Object.keys(COUNTRY_BY_NAME).forEach(function(n){ var c = COUNTRY_BY_NAME[n]; if (c.lat === null || c.lat === undefined || isNaN(c.lat)) return; var d = distBrg(here, c).d; if (d < bd) { bd = d; best = n; } });
+  NEAR_CACHE[key] = bd < 700 ? best : null;
+  return NEAR_CACHE[key];
+}
+
+/* ---------- Heures locales et fuseaux ---------- */
+var TZ_OK = {}, TZ_FMT = {};
+var DEVICE_TZ = (function(){ try { return Intl.DateTimeFormat().resolvedOptions().timeZone || "Europe/Paris"; } catch (e) { return "Europe/Paris"; } })();
+function tzValid(t){
+  if (!t) return false;
+  if (t in TZ_OK) return TZ_OK[t];
+  try { new Intl.DateTimeFormat("fr-FR", {timeZone:t}); TZ_OK[t] = true; } catch (e) { TZ_OK[t] = false; }
+  return TZ_OK[t];
+}
+function tzOf(c, lat, lon){
+  if (!c) return null;
+  if (NAME_TZ[c.name] && tzValid(NAME_TZ[c.name])) return NAME_TZ[c.name];
+  if (!c.iso) return null;
+  var t = tzByLon(c.iso, lat !== undefined && lat !== null ? lat : c.lat, lon !== undefined && lon !== null ? lon : c.lon) || ISO_TZ[c.iso];
+  return t && tzValid(t) ? t : null;
+}
+function zoneFor(c, lat, lon, override){
+  if (override === "UTC") return {off:0, label:"UTC"};
+  if (override && tzValid(override)) return {tz:override};
+  var t = tzOf(c, lat, lon);
+  if (t) return {tz:t};
+  if (lon !== undefined && lon !== null && !isNaN(lon)) return {off:Math.round(lon / 15) * 60, approx:true};
+  return {tz:DEVICE_TZ};
+}
+function offAt(zone, ms){
+  if (!zone) return 0;
+  if (!zone.tz) return zone.off || 0;
+  var f = TZ_FMT[zone.tz];
+  if (!f) f = TZ_FMT[zone.tz] = new Intl.DateTimeFormat("en-US", {timeZone:zone.tz, hourCycle:"h23", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", second:"2-digit"});
+  var p = {};
+  f.formatToParts(new Date(ms)).forEach(function(x){ p[x.type] = x.value; });
+  var asUtc = Date.UTC(+p.year, +p.month - 1, +p.day, (+p.hour) % 24, +p.minute, +p.second);
+  return Math.round((asUtc - Math.floor(ms / 1000) * 1000) / 60000);
+}
+function fmtOff(min){
+  var sg = min < 0 ? "-" : "+", a = Math.abs(min), h = Math.floor(a / 60), m = a % 60;
+  return "UTC" + (min === 0 ? "" : sg + h + (m ? ":" + ("0" + m).slice(-2) : ""));
+}
+function msOf(date, time){ return Date.UTC(+date.slice(0,4), +date.slice(4,6) - 1, +date.slice(6,8), +(time || "0000").slice(0,2), +(time || "0000").slice(2,4)); }
+function utcToLocal(date, time, zone){
+  if (!date || date.length !== 8) return {date:date, time:time, off:0};
+  var ms = msOf(date, time), off = offAt(zone, ms), i = new Date(ms + off * 60000).toISOString();
+  return {date:i.slice(0,10).replace(/-/g, ""), time:i.slice(11,16).replace(":", ""), off:off};
+}
+function localToUtc(date, time, zone){
+  if (!date || date.length !== 8) return {date:date || "", time:time || ""};
+  var guess = msOf(date, time), off1 = offAt(zone, guess), utc = guess - off1 * 60000, off2 = offAt(zone, utc);
+  if (off2 !== off1) utc = guess - off2 * 60000;
+  var i = new Date(utc).toISOString();
+  return {date:i.slice(0,10).replace(/-/g, ""), time:i.slice(11,16).replace(":", "")};
+}
+function nowIn(zone){ var u = utcParts(); return utcToLocal(u.date.replace(/-/g, ""), u.time.replace(":", ""), zone); }
+function zoneOfQ(q){
+  if (S.ui.timeMode === "utc") return {off:0};
+  if (q.tz && tzValid(q.tz)) return {tz:q.tz};
+  if (typeof q.tzoff === "number") return {off:q.tzoff};
+  return HOME ? HOME.zone : {tz:DEVICE_TZ};
+}
+function qLocal(q){ return utcToLocal(q.date, q.ton, zoneOfQ(q)); }
+
+/* ---------- Bandes, modes, locator ---------- */
+var BANDS = [[0.1357,0.1378,"2200m"],[0.472,0.479,"630m"],[1.8,2.0,"160m"],[3.5,4.0,"80m"],[5.06,5.45,"60m"],[7.0,7.3,"40m"],
+  [10.1,10.15,"30m"],[14.0,14.35,"20m"],[18.068,18.168,"17m"],[21.0,21.45,"15m"],[24.89,24.99,"12m"],[26.5,27.9999,"11m"],
+  [28.0,29.7,"10m"],[50,54,"6m"],[70,71,"4m"],[144,148,"2m"],[222,225,"1.25m"],[420,450,"70cm"],[1240,1300,"23cm"],
+  [2300,2450,"13cm"],[10000,10500,"3cm"]];
+var ADIF_BANDS = {"2200m":"2190m","630m":"630m","160m":"160m","80m":"80m","60m":"60m","40m":"40m","30m":"30m","20m":"20m","17m":"17m",
+  "15m":"15m","12m":"12m","10m":"10m","6m":"6m","4m":"4m","2m":"2m","1.25m":"1.25m","70cm":"70cm","23cm":"23cm","13cm":"13cm","3cm":"3cm"};
+var MODES = ["SSB","USB","LSB","AM","FM","CW","FT8","FT4","RTTY","PSK31","JS8","SSTV","DMR","D-STAR","C4FM"];
+function parseFreq(v){
+  if (v === null || v === undefined) return null;
+  v = String(v).trim().replace(",", ".");
+  if (!/^[0-9]+(\.[0-9]+)?$/.test(v)) return null;
+  var n = parseFloat(v);
+  if (v.indexOf(".") < 0 && n >= 1000) n = n / 1000;
+  return n > 0 ? n : null;
+}
+function bandOf(f){
+  if (!f) return "";
+  for (var i = 0; i < BANDS.length; i++) if (f >= BANDS[i][0] && f <= BANDS[i][1]) return BANDS[i][2];
+  return "";
+}
+function defRst(m, band){
+  if (band === "11m") return "S9 R5";
+  if (/^(CW|RTTY|PSK31)$/.test(m)) return "599";
+  if (/^(FT8|FT4|JS8)$/.test(m)) return "-10";
+  if (m === "SSTV") return "595";
+  return "59";
+}
+function adifMode(m, f){
+  switch (m) {
+    case "SSB": return {mode:"SSB", sub: f ? ((f < 10 && !(f >= 5 && f < 5.5)) ? "LSB" : "USB") : ""};
+    case "USB": return {mode:"SSB", sub:"USB"};
+    case "LSB": return {mode:"SSB", sub:"LSB"};
+    case "FT4": return {mode:"MFSK", sub:"FT4"};
+    case "JS8": return {mode:"MFSK", sub:"JS8"};
+    case "PSK31": return {mode:"PSK", sub:"PSK31"};
+    case "DMR": return {mode:"DIGITALVOICE", sub:"DMR"};
+    case "C4FM": return {mode:"DIGITALVOICE", sub:"C4FM"};
+    case "D-STAR": return {mode:"DSTAR", sub:""};
+    default: return {mode:m || "", sub:""};
+  }
+}
+function fromAdifMode(mode, sub){
+  mode = (mode || "").toUpperCase(); sub = (sub || "").toUpperCase();
+  if (sub === "FT4") return "FT4";
+  if (sub === "JS8") return "JS8";
+  if (sub === "PSK31" || mode === "PSK31") return "PSK31";
+  if (sub === "DMR") return "DMR";
+  if (sub === "C4FM") return "C4FM";
+  if (mode === "DSTAR") return "D-STAR";
+  if (sub === "USB" || mode === "USB") return "USB";
+  if (sub === "LSB" || mode === "LSB") return "LSB";
+  return mode;
+}
+var LOC_RE = /^[A-R]{2}[0-9]{2}([A-X]{2})?$/;
+function locToLL(l){
+  l = (l || "").trim().toUpperCase();
+  if (!LOC_RE.test(l)) return null;
+  var lon = (l.charCodeAt(0) - 65) * 20 - 180 + (+l[2]) * 2;
+  var lat = (l.charCodeAt(1) - 65) * 10 - 90 + (+l[3]);
+  if (l.length === 6) { lon += (l.charCodeAt(4) - 65) * (5/60) + 2.5/60; lat += (l.charCodeAt(5) - 65) * (2.5/60) + 1.25/60; }
+  else { lon += 1; lat += 0.5; }
+  return {lat:lat, lon:lon};
+}
+function fmtLoc(l){
+  l = (l || "").trim();
+  if (l.length >= 6) return l.slice(0,4).toUpperCase() + l.slice(4,6).toLowerCase();
+  return l.toUpperCase();
+}
+function distBrg(a, b){
+  var r = Math.PI / 180, R = 6371;
+  var dLat = (b.lat - a.lat) * r, dLon = (b.lon - a.lon) * r, la1 = a.lat * r, la2 = b.lat * r;
+  var h = Math.pow(Math.sin(dLat/2), 2) + Math.cos(la1) * Math.cos(la2) * Math.pow(Math.sin(dLon/2), 2);
+  var d = 2 * R * Math.asin(Math.min(1, Math.sqrt(h)));
+  var y = Math.sin(dLon) * Math.cos(la2), x = Math.cos(la1) * Math.sin(la2) - Math.sin(la1) * Math.cos(la2) * Math.cos(dLon);
+  return {d:d, b:(Math.atan2(y, x) / r + 360) % 360};
+}
+function km(d){ return Math.round(d).toLocaleString("fr-FR") + " km"; }
+
+/* ---------- Utilitaires ---------- */
+function esc(s){ return String(s === null || s === undefined ? "" : s).replace(/[&<>"']/g, function(c){ return {"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]; }); }
+function utcParts(d){ d = d || new Date(); var i = d.toISOString(); return {date:i.slice(0,10), time:i.slice(11,16)}; }
+function newId(){ return "q" + Date.now().toString(36) + Math.random().toString(36).slice(2,6); }
+function fDate(d, short){ return d && d.length === 8 ? d.slice(6,8) + "/" + d.slice(4,6) + "/" + (short ? d.slice(2,4) : d.slice(0,4)) : "date ?"; }
+function fTime(t){ return t && t.length >= 4 ? t.slice(0,2) + ":" + t.slice(2,4) : "--:--"; }
+var toastT = null;
+function toast(msg){ var t = $("toast"); t.textContent = msg; t.classList.add("on"); clearTimeout(toastT); toastT = setTimeout(function(){ t.classList.remove("on"); }, 2800); }
+function opKey(k){ return k.replace(/[^A-Z0-9]/g, "_"); }
+function cleanTxt(v){ v = v === null || v === undefined ? "" : String(v).trim(); return /^[?\-.]+$/.test(v) ? "" : v; }
+
+/* ---------- Données et synchronisation ---------- */
+var LS = "carnet_trafic_v1";
+var S = {qsos:{}, ops:{}, settings:{mycall:"", myloc:"", myqth:"", pwr:"", theme:"", stations:null, active:""}, ui:{mode:"SSB", freq:"", swl:false, tab:"log", timeMode:"local"}};
+var pend = [];
+var cloud = null, cloudDocs = null, chains = {};
+
+function saveLocal(){
+  try {
+    var q = {};
+    Object.keys(S.qsos).forEach(function(id){ q[id] = stripTmp(S.qsos[id], true); });
+    var p = pend.map(function(x){ return {dk:x.dk, f:x.f, w:x.w}; });
+    localStorage.setItem(LS, JSON.stringify({qsos:q, ops:S.ops, settings:S.settings, ui:S.ui, pend:p}));
+  } catch (e) {}
+}
+function loadLocal(){
+  try {
+    var r = localStorage.getItem(LS);
+    if (!r) return;
+    var o = JSON.parse(r);
+    if (o.qsos) S.qsos = o.qsos;
+    if (o.ops) S.ops = o.ops;
+    if (o.settings) S.settings = Object.assign(S.settings, o.settings);
+    if (o.ui) S.ui = Object.assign(S.ui, o.ui);
+    if (Array.isArray(o.pend)) pend = o.pend;
+  } catch (e) {}
+}
+function stripTmp(q, keepDk){
+  var o = {};
+  Object.keys(q).forEach(function(k){ if (k.charAt(0) !== "_" && k !== "id" && (keepDk || k !== "dk")) o[k] = q[k]; });
+  return o;
+}
+function setSync(s){
+  $("sync").setAttribute("data-s", s);
+  $("syncTxt").textContent = s === "cloud" ? "Synchronisé" : s === "wait" ? "Connexion…" : s === "err" ? "Synchro en erreur" : "Sur cet appareil";
+}
+function write(dk, fields, whole){
+  var p = {dk:dk, f:fields, w:!!whole};
+  pend.push(p);
+  saveLocal();
+  if (cloud) flushOne(p);
+}
+function flushOne(p){
+  if (p.busy || !cloud) return;
+  p.busy = true;
+  var ref = cloud.col.doc(p.dk);
+  chains[p.dk] = (chains[p.dk] || Promise.resolve()).then(function(){
+    var job = p.w ? ref.set(p.f) : ref.update(p.f).catch(function(e){
+      if (e && e.code === "invalid_argument" && !(cloudDocs && cloudDocs[p.dk])) return ref.set(p.f);
+      throw e;
+    });
+    return job.then(function(){
+      var i = pend.indexOf(p); if (i >= 0) pend.splice(i, 1);
+      saveLocal();
+      if (cloud) setSync(pend.length ? "wait" : "cloud");
+    }, function(e){
+      p.busy = false;
+      var code = e && e.code;
+      if (code === "unavailable") { setTimeout(function(){ flushOne(p); }, 1200 + Math.random() * 1500); return; }
+      if (code === "quota_exceeded") toast("Espace de synchro plein : exporte puis allège le carnet.");
+      setSync("err");
+    });
+  });
+}
+function flushAll(){ pend.slice().forEach(flushOne); }
+function rebuildFromCloud(){
+  var q = {}, ops = {}, set = null;
+  Object.keys(cloudDocs).forEach(function(k){
+    var d = cloudDocs[k];
+    if (k.indexOf("m_") === 0) {
+      Object.keys(d).forEach(function(id){ if (d[id] && typeof d[id] === "object") { var o = Object.assign({}, d[id]); o.dk = k; q[id] = o; } });
+    } else if (k === "ops") {
+      Object.keys(d).forEach(function(c){ if (d[c]) ops[c] = d[c]; });
+    } else if (k === "settings") set = d;
+  });
+  pend.forEach(function(p){
+    if (p.dk === "settings") { set = p.f; return; }
+    Object.keys(p.f).forEach(function(fk){
+      var v = p.f[fk];
+      if (p.dk === "ops") { if (v) ops[fk] = v; else delete ops[fk]; }
+      else if (v) { var o = Object.assign({}, v); o.dk = p.dk; q[fk] = o; }
+      else delete q[fk];
+    });
+  });
+  S.qsos = q; S.ops = ops;
+  if (set) S.settings = Object.assign({}, S.settings, set);
+}
+function initCloud(){
+  if (!window.claude || typeof window.claude.use !== "function") { setSync("local"); return; }
+  setSync("wait");
+  Promise.all([window.claude.use("db"), window.claude.use("user")]).then(function(r){
+    var db = r[0], user = r[1];
+    if (!db || !user) { setSync("local"); return null; }
+    return user.id().then(function(uid){
+      if (!uid) { setSync("local"); return; }
+      var col = db.collection("data/users/" + uid);
+      var first = true;
+      cloud = {col:col};
+      col.onSnapshot(function(snap){
+        cloudDocs = {};
+        snap.docs.forEach(function(d){ if (d.exists) cloudDocs[d.id] = d.data(); });
+        rebuildFromCloud();
+        saveLocal();
+        applySettingsUI();
+        refresh();
+        if (first) { first = false; setSync(pend.length ? "wait" : "cloud"); setTimeout(flushAll, 0); }
+      }, function(e){
+        cloud = null; setSync(e && e.code === "revoked" ? "local" : "err");
+      });
+    });
+  }).catch(function(){ setSync("local"); });
+}
+
+/* ---------- Index, géocodage et statistiques ---------- */
+var IDX = {}, WK = {}, SORTED = [], HOME = null;
+function stations(){
+  var s = S.settings;
+  if (!Array.isArray(s.stations) || !s.stations.length) {
+    s.stations = [
+      {id:"st1", name:"Fixe", kind:"fixe", call:s.mycall || "", qth:s.myqth || (s.myloc ? "" : "Lyon"), loc:s.myloc || "", tz:"", rig:"", ant:"", mic:"", pwr:s.pwr || ""},
+      {id:"st2", name:"Mobile", kind:"mobile", call:s.mycall || "", qth:"", loc:"", tz:"", rig:"", ant:"", mic:"", pwr:""}
+    ];
+    s.active = "st1";
+  }
+  return s.stations;
+}
+function activeSt(){
+  var l = stations();
+  for (var i = 0; i < l.length; i++) if (l[i].id === S.settings.active) return l[i];
+  return l[0];
+}
+function stPos(st){
+  if (!st) return null;
+  var g = null, ll = locToLL(st.loc);
+  if (ll) g = {lat:ll.lat, lon:ll.lon, label:st.qth || fmtLoc(st.loc), cc:nearestCountry(ll.lat, ll.lon)};
+  else if (st.qth) { var r = geoText(st.qth); if (r) g = {lat:r.lat, lon:r.lon, label:r.label, cc:r.cc, prec:r.prec}; }
+  if (!g) return null;
+  g.zone = zoneFor(g.cc ? COUNTRY_BY_NAME[g.cc] : null, g.lat, g.lon, st.tz);
+  return g;
+}
+function stZone(st){
+  var p = stPos(st);
+  if (p) return p.zone;
+  return st && st.tz ? zoneFor(null, null, null, st.tz) : {tz:DEVICE_TZ};
+}
+function entryZone(){ return S.ui.timeMode === "utc" ? {off:0} : stZone(activeSt()); }
+function zoneName(z){ return z.off === 0 && !z.tz ? "UTC" : (HOME && HOME.label ? HOME.label : "heure locale"); }
+function qHome(q){ return (typeof q.mylat === "number" && typeof q.mylon === "number") ? {lat:q.mylat, lon:q.mylon} : HOME; }
+function rebuildIndex(){
+  IDX = {}; WK = {}; LEARN = {};
+  var learnCnt = {};
+  SORTED = Object.keys(S.qsos).map(function(id){ var q = S.qsos[id]; q.id = id; return q; });
+  SORTED.forEach(function(q){
+    if (isCB(q.call)) {
+      var c = countryFromText(q.pays), d = cbDiv(q.call);
+      if (c && d) { var m = learnCnt[d] = learnCnt[d] || {}; m[c.name] = (m[c.name] || 0) + 1; }
+    }
+  });
+  Object.keys(learnCnt).forEach(function(d){
+    var m = learnCnt[d], best = null;
+    Object.keys(m).forEach(function(n){ if (!best || m[n] > m[best]) best = n; });
+    LEARN[d] = best;
+  });
+  HOME = stPos(activeSt());
+  SORTED.sort(function(a, b){
+    var ka = (a.date || "") + (a.ton || ""), kb = (b.date || "") + (b.ton || "");
+    if (ka !== kb) return ka < kb ? 1 : -1;
+    return (b.ts || 0) - (a.ts || 0);
+  });
+  SORTED.forEach(function(q){
+    var k = callKey(q.call);
+    (IDX[k] = IDX[k] || []).push(q);
+    q._c = detectCountry(q.call, q.pays);
+    q._g = geoOf(q);
+    var hp = qHome(q);
+    q._d = (q._g && hp) ? distBrg(hp, q._g) : null;
+    if (!q.swl && q._c) { var w = WK[q._c.name] = WK[q._c.name] || {}; w[q.band || "?"] = 1; }
+  });
+}
+function renderStats(){
+  var today = utcParts().date.replace(/-/g, "");
+  var n = 0, s = 0, t = 0, far = null;
+  SORTED.forEach(function(q){
+    if (q.swl) s++; else n++;
+    if (q.date === today) t++;
+    if (q._d && (!far || q._d.d > far._d.d)) far = q;
+  });
+  $("stats").innerHTML = "<span><b>" + n + "</b> QSO</span><span><b>" + Object.keys(WK).length + "</b> pays</span>" +
+    (s ? "<span><b>" + s + "</b> écoutes</span>" : "") + "<span><b>" + t + "</b> aujourd\u2019hui</span>" +
+    (far ? "<span>Record <b>" + km(far._d.d) + "</b></span>" : "");
+}
+
+/* ---------- Formulaire ---------- */
+var curVideo = "";
+function showAttach(){ $("vidAttach").hidden = !curVideo; $("vidName").textContent = curVideo; }
+var editId = null, rstTouched = false, autoFor = "", tonSet = false, paysAuto = true;
+var F = {};
+["fCall","fCall2","fFreq","fMode","fRs","fRr","fName","fQth","fPays","fLoc","fNote","fDate","fTime","fPwr","fRig","fMic","fAnt","fOpwr","fEmail","fContest"].forEach(function(k){ F[k] = $(k); });
+(function(){
+  var o0 = document.createElement("option"); o0.value = ""; o0.textContent = "Non précisé"; F.fMode.appendChild(o0);
+  MODES.forEach(function(m){ var o = document.createElement("option"); o.value = m; o.textContent = m; F.fMode.appendChild(o); });
+})();
+var AUTO_FIELDS = [["fName","name"],["fQth","qth"],["fPays","pays"],["fLoc","loc"],["fRig","rig"],["fMic","mic"],["fAnt","ant"],["fOpwr","opwr"],["fEmail","email"]];
+
+function ensureMode(m){
+  if (!m) return;
+  for (var i = 0; i < F.fMode.options.length; i++) if (F.fMode.options[i].value === m) return;
+  var o = document.createElement("option"); o.value = m; o.textContent = m; F.fMode.appendChild(o);
+}
+function setSwl(on){
+  S.ui.swl = !!on;
+  document.body.classList.toggle("swl", S.ui.swl);
+  $("segQso").setAttribute("aria-pressed", String(!S.ui.swl));
+  $("segSwl").setAttribute("aria-pressed", String(S.ui.swl));
+  saveLocal();
+  renderStation();
+}
+function curBand(){ return bandOf(parseFreq(F.fFreq.value)); }
+function resetRst(){
+  var d = defRst(F.fMode.value, curBand());
+  F.fRs.value = d; F.fRr.value = d; rstTouched = false;
+}
+function updateBand(){
+  var f = parseFreq(F.fFreq.value), b = bandOf(f), tag = $("bandTag");
+  if (!F.fFreq.value.trim()) { tag.hidden = true; return; }
+  tag.hidden = false;
+  if (b) { tag.textContent = b; tag.className = "band"; }
+  else { tag.textContent = f ? "hors bande" : "?"; tag.className = "band off"; }
+}
+var editZone = null;
+function formZone(){ return editId && editZone ? editZone : entryZone(); }
+function updateTon(){
+  var b = $("tonBtn");
+  if (F.fTime.value) { b.hidden = false; $("tonTxt").textContent = F.fTime.value + " " + (formZone().off === 0 && !formZone().tz ? "UTC" : "(" + zoneLabel() + ")"); }
+  else b.hidden = true;
+  $("lblDate").textContent = "Date" + (S.ui.timeMode === "utc" ? " (UTC)" : " (locale)");
+  $("lblTime").textContent = "Heure de début" + (S.ui.timeMode === "utc" ? " (UTC)" : " (" + zoneLabel() + ")");
+}
+function zoneLabel(){ if (S.ui.timeMode === "utc") return "UTC"; return HOME && HOME.label ? HOME.label : "heure locale"; }
+function fillNow(){
+  var l = nowIn(formZone());
+  F.fDate.value = l.date.slice(0,4) + "-" + l.date.slice(4,6) + "-" + l.date.slice(6,8);
+  F.fTime.value = fTime(l.time);
+}
+function startTimeIfNeeded(){
+  if (editId || tonSet) return;
+  fillNow(); tonSet = true;
+  updateTon();
+}
+function clearAuto(){
+  AUTO_FIELDS.forEach(function(p){ var el = F[p[0]]; if (el.classList.contains("auto")) { el.value = ""; el.classList.remove("auto"); } });
+  autoFor = "";
+}
+function autofill(key){
+  if (editId) return;
+  if (autoFor && autoFor !== key) clearAuto();
+  var h = IDX[key], last = {};
+  if (h) h.forEach(function(q){ AUTO_FIELDS.forEach(function(p){ if (!last[p[1]] && q[p[1]]) last[p[1]] = q[p[1]]; }); });
+  if (!last.pays) { var c = detectCountry(F.fCall.value, ""); if (c) last.pays = c.name; }
+  AUTO_FIELDS.forEach(function(p){
+    var el = F[p[0]];
+    if ((!el.value || el.classList.contains("auto")) && last[p[1]]) { el.value = last[p[1]]; el.classList.add("auto"); }
+  });
+  autoFor = key;
+}
+function parseCallField(v){
+  var raw = (v || "").trim().toUpperCase();
+  if (isCB(raw)) return {call:normCall(raw), loc:"", rr:"", name:""};
+  var t = raw.split(/\s+/).filter(Boolean);
+  var r = {call:t[0] || "", loc:"", rr:"", name:""};
+  t.slice(1).forEach(function(x){
+    if (!r.loc && LOC_RE.test(x)) r.loc = x;
+    else if (!r.rr && /^-?[0-9]{2,3}$/.test(x)) r.rr = x;
+    else r.name = (r.name ? r.name + " " : "") + x.charAt(0) + x.slice(1).toLowerCase();
+  });
+  return r;
+}
+var lookT = null;
+function onCallInput(){
+  if (F.fCall.value.trim()) startTimeIfNeeded();
+  clearTimeout(lookT);
+  lookT = setTimeout(function(){
+    var c = parseCallField(F.fCall.value).call;
+    if (callOk(c)) autofill(callKey(c)); else if (autoFor) clearAuto();
+    renderStation();
+  }, 140);
+}
+function formQ(){
+  var pc = parseCallField(F.fCall.value);
+  return {call:pc.call, pays:F.fPays.value, qth:F.fQth.value, loc:F.fLoc.value || pc.loc};
+}
+function clearForm(){
+  editId = null; tonSet = false; editZone = null; curVideo = ""; showAttach();
+  ["fCall","fCall2","fName","fQth","fPays","fLoc","fNote","fDate","fTime","fRig","fMic","fAnt","fOpwr","fEmail","fContest"].forEach(function(k){ F[k].value = ""; F[k].classList.remove("auto"); });
+  autoFor = "";
+  F.fPwr.value = activeSt().pwr || "";
+  resetRst();
+  updateTon();
+  $("btnLog").innerHTML = "Enregistrer<span class=\"xl\"> le QSO</span><kbd>Entrée</kbd>";
+  $("btnDel").hidden = true; $("btnDel").dataset.armed = ""; $("btnDel").textContent = "Supprimer";
+  $("fldFreq").classList.remove("err");
+  renderStation(); renderLog();
+}
+function loadForEdit(id){
+  var q = S.qsos[id]; if (!q) return;
+  if (isNarrow()) setView("entry"); else showTab(S.ui.tab === "map" ? "map" : "log");
+setView(S.ui.view === "log" || S.ui.view === "map" ? S.ui.view : "entry");
+if (!isNarrow()) showTab(S.ui.tab === "map" ? "map" : "log");
+if (window.matchMedia) { var mqn = window.matchMedia("(max-width: 999px)"); var onN = function(){ if (!isNarrow()) showTab(S.ui.tab === "map" ? "map" : "log"); if (chart) setTimeout(function(){ chart.resize(); }, 60); }; if (mqn.addEventListener) mqn.addEventListener("change", onN); }
+  editId = id; tonSet = true; curVideo = q.video || ""; showAttach();
+  setSwl(!!q.swl);
+  F.fCall.value = q.call || ""; F.fCall2.value = q.call2 || "";
+  F.fFreq.value = q.freq ? String(q.freq) : "";
+  ensureMode(q.mode); F.fMode.value = q.mode || "";
+  F.fRs.value = q.rs || ""; F.fRr.value = q.rr || ""; rstTouched = true;
+  F.fName.value = q.name || ""; F.fQth.value = q.qth || ""; F.fPays.value = q.pays || ""; F.fLoc.value = q.loc ? fmtLoc(q.loc) : ""; F.fNote.value = q.note || "";
+  F.fRig.value = q.rig || ""; F.fMic.value = q.mic || ""; F.fAnt.value = q.ant || ""; F.fOpwr.value = q.opwr || ""; F.fEmail.value = q.email || ""; F.fContest.value = q.contest || "";
+  editZone = zoneOfQ(q);
+  var lq = utcToLocal(q.date, q.ton, editZone);
+  F.fDate.value = lq.date && lq.date.length === 8 ? lq.date.slice(0,4) + "-" + lq.date.slice(4,6) + "-" + lq.date.slice(6,8) : "";
+  F.fTime.value = lq.time ? fTime(lq.time) : "";
+  F.fPwr.value = q.pwr || "";
+  AUTO_FIELDS.forEach(function(p){ F[p[0]].classList.remove("auto"); });
+  if (q.rig || q.mic || q.ant || q.opwr || q.email || q.contest) $("hisBox").open = true;
+  $("btnLog").innerHTML = "Enregistrer<span class=\"xl\"> la modification</span><kbd>Entrée</kbd>";
+  $("btnDel").hidden = false;
+  updateBand(); updateTon(); renderStation(); renderLog();
+  F.fCall.focus();
+}
+function docKeyFor(date, keep){
+  var ym = date && date.length === 8 ? date.slice(0,6) : "nodate";
+  if (keep && keep.indexOf("m_" + ym) === 0) return keep;
+  var base = "m_" + ym, k = base, n = 1;
+  while (countIn(k) >= 700) { n++; k = base + "_" + n; }
+  return k;
+}
+function countIn(k){ var c = 0; for (var id in S.qsos) if (S.qsos[id].dk === k) c++; return c; }
+
+function doLog(){
+  var parsed = parseCallField(F.fCall.value);
+  if (parsed.loc && !F.fLoc.value) F.fLoc.value = parsed.loc;
+  if (parsed.rr) { F.fRr.value = parsed.rr; rstTouched = true; }
+  if (parsed.name && (!F.fName.value || F.fName.classList.contains("auto"))) { F.fName.value = parsed.name; F.fName.classList.remove("auto"); }
+  if (!callOk(parsed.call)) { toast("Indicatif incomplet"); F.fCall.focus(); return; }
+  var f = parseFreq(F.fFreq.value);
+  if (!f) { $("fldFreq").classList.add("err"); toast("Indique la fréquence"); F.fFreq.focus(); return; }
+  $("fldFreq").classList.remove("err");
+  var now = utcParts();
+  var old = editId ? S.qsos[editId] : null;
+  var z = formZone(), ln = nowIn(z);
+  var ldate = F.fDate.value ? F.fDate.value.replace(/-/g, "") : (old ? "" : ln.date);
+  var ltime = (F.fTime.value || (old ? "" : fTime(ln.time))).replace(":", "");
+  var cv = ldate ? localToUtc(ldate, ltime || "0000", z) : {date:old ? old.date || "" : "", time:old ? old.ton || "" : ""};
+  var date = cv.date, ton = cv.time;
+  var st = activeSt(), sp = HOME;
+  var callStd = isCB(parsed.call) ? normCall(parsed.call) : normCall(parsed.call).replace(/ /g, "");
+  var q = {
+    call: callStd, date: date, ton: ton, toff: old ? (old.toff || ton) : now.time.replace(":", ""),
+    freq: f, band: bandOf(f), mode: F.fMode.value,
+    rs: S.ui.swl ? "" : F.fRs.value.trim(), rr: F.fRr.value.trim(),
+    name: F.fName.value.trim(), qth: F.fQth.value.trim(), pays: F.fPays.value.trim(), loc: fmtLoc(F.fLoc.value), note: F.fNote.value.trim(),
+    rig: F.fRig.value.trim(), mic: F.fMic.value.trim(), ant: F.fAnt.value.trim(), opwr: F.fOpwr.value.trim(), email: F.fEmail.value.trim(), contest: F.fContest.value.trim(),
+    pwr: F.fPwr.value.trim(), swl: S.ui.swl ? 1 : 0, call2: S.ui.swl ? normCall(F.fCall2.value) : "",
+    mycall: old ? (old.mycall || "") : (st.call || S.settings.mycall || ""), myloc: old ? (old.myloc || "") : (st.loc ? fmtLoc(st.loc) : (sp ? llToLoc(sp.lat, sp.lon) : "")),
+    ts: old ? (old.ts || Date.now()) : Date.now()
+  };
+  if (old) ["st","sid","myqth","mylat","mylon","myrig","myant","mymic"].forEach(function(k){ if (old[k] !== undefined) q[k] = old[k]; });
+  else {
+    q.st = st.name || ""; q.sid = st.id; q.myqth = sp ? sp.label : (st.qth || "");
+    if (sp) { q.mylat = Math.round(sp.lat * 10000) / 10000; q.mylon = Math.round(sp.lon * 10000) / 10000; }
+    q.myrig = st.rig || ""; q.myant = st.ant || ""; q.mymic = st.mic || "";
+  }
+  if (z.tz) q.tz = z.tz; else if (S.ui.timeMode !== "utc") q.tzoff = z.off; else if (old) { if (old.tz) q.tz = old.tz; if (typeof old.tzoff === "number") q.tzoff = old.tzoff; }
+  if (old && old.tzfix) q.tzfix = old.tzfix;
+  if (curVideo) q.video = curVideo;
+  if (old && old.src) q.src = old.src;
+  if (old && old.accId) q.accId = old.accId;
+  var id = editId || newId();
+  var dk = docKeyFor(date, old ? old.dk : null);
+  if (old && old.dk && old.dk !== dk) { var del = {}; del[id] = null; write(old.dk, del); }
+  S.qsos[id] = Object.assign({dk:dk}, q);
+  var w = {}; w[id] = q; write(dk, w);
+  S.ui.freq = F.fFreq.value; S.ui.mode = F.fMode.value; saveLocal();
+  toast((old ? "Modifié : " : (S.ui.swl ? "Écoute notée : " : "QSO enregistré : ")) + callStd);
+  refresh(true);
+  clearForm();
+  F.fCall.focus();
+}
+function doDelete(){
+  var b = $("btnDel");
+  if (!editId) return;
+  if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Confirmer la suppression"; return; }
+  var q = S.qsos[editId];
+  if (q) { var d = {}; d[editId] = null; write(q.dk, d); delete S.qsos[editId]; }
+  toast("QSO supprimé");
+  refresh(true); clearForm();
+}
+
+/* ---------- Fiche station ---------- */
+var noteT = null, CORR_ZONE = null;
+function updateCorrTime(){
+  var el = $("corrTime"); if (!el) return;
+  if (!CORR_ZONE) { el.textContent = "–"; return; }
+  var l = nowIn(CORR_ZONE);
+  el.innerHTML = fTime(l.time) + ' <small class="offs">' + (CORR_ZONE.approx ? "≈ " : "") + fmtOff(l.off) + '</small>';
+}
+function compass(b){
+  return '<svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="17" fill="none" stroke="currentColor" stroke-opacity=".3" stroke-width="2"/>' +
+    '<text x="20" y="9" text-anchor="middle" font-size="7" fill="currentColor" fill-opacity=".6" font-family="sans-serif">N</text>' +
+    '<g transform="rotate(' + b.toFixed(0) + ' 20 20)"><path d="M20 8 L25 24 L20 21 L15 24 Z" fill="var(--accent)"/></g></svg>';
+}
+var PREC_TXT = {"locator":"position exacte (locator)", "ville":"ville", "département":"centre du département", "région":"centre de la région", "pays":"centre du pays"};
+function renderStation(){
+  var box = $("station"), fl = $("flagline");
+  var fq = formQ();
+  if (!fq.call || fq.call.replace(/ /g, "").length < 3) { box.hidden = true; fl.innerHTML = ""; return; }
+  var ctry = detectCountry(fq.call, fq.pays);
+  fl.innerHTML = ctry ? (flag(ctry.iso) + " <b>" + esc(ctry.name) + "</b>" + (ctry.p ? " <span>(" + esc(ctry.p) + ")</span>" : "")) : (isCB(fq.call) ? "Division CB " + esc(cbDiv(fq.call)) + " : pays à préciser" : "Préfixe non reconnu");
+  if (!callOk(fq.call)) { box.hidden = true; return; }
+  box.hidden = false;
+  var key = callKey(fq.call), hist = IDX[key] || [];
+  var band = curBand(), mode = F.fMode.value;
+  var g = geoOf(fq), db = (g && HOME) ? distBrg(HOME, g) : null;
+
+  var h = '<div class="st-head"><div class="st-flag">' + (ctry ? flag(ctry.iso) : "📡") + '</div><div><div class="st-name mono">' + esc(fq.call) + '</div>' +
+    '<div class="st-sub">' + esc([F.fName.value, g && g.prec !== "pays" ? g.label : "", ctry ? ctry.name : ""].filter(Boolean).join(", ") || "Pays à préciser") + '</div></div></div>';
+  h += '<div class="facts">' +
+    '<div class="fact"><span>Distance' + (g && g.prec !== "locator" && g.prec !== "ville" && db ? " ≈" : "") + '</span><b>' + (db ? km(db.d) : "–") + '</b></div>' +
+    '<div class="fact compass">' + (db ? compass(db.b) : "") + '<div><span>Azimut</span><b>' + (db ? Math.round(db.b) + "°" : "–") + '</b></div></div>' +
+    '<div class="fact"><span>Heure chez lui</span><b id="corrTime">–</b></div>' +
+    '<div class="fact"><span>Continent' + (ctry && ctry.cq ? ", zone CQ" : "") + '</span><b>' + (ctry && ctry.cont ? ctry.cont : "–") + (ctry && ctry.cq ? " " + (APPROX_CQ[ctry.name] ? "~" : "") + ctry.cq : "") + '</b></div>' +
+    '</div>';
+  if (!HOME) h += '<p class="note-small tight">Indique ta ville ou ton locator dans les réglages pour la distance et l\u2019azimut.</p>';
+  else if (g) h += '<p class="note-small tight">Position : ' + esc(PREC_TXT[g.prec]) + (g.prec !== "pays" ? " (" + esc(g.label) + ")" : "") + (g.prec !== "locator" && g.prec !== "ville" ? ". Ajoute la ville ou le locator pour plus de précision." : "") + '</p>';
+  else h += '<p class="note-small tight">Position inconnue : renseigne la ville, le pays ou le locator.</p>';
+
+  var badges = [];
+  if (!S.ui.swl && ctry && ctry.iso) {
+    var wk = WK[ctry.name];
+    if (!wk) badges.push('<span class="badge good">Nouveau pays</span>');
+    else if (band && !wk[band]) badges.push('<span class="badge good">Nouveau pays sur ' + band + '</span>');
+  }
+  if (ctry && ctry.conflict) badges.push('<span class="badge warn">Pays saisi « ' + esc(ctry.conflict) + ' » différent du préfixe ' + esc(ctry.p) + ' (' + esc(ctry.name) + ')</span>');
+  var dupe = null;
+  hist.forEach(function(q){ if (!dupe && q.id !== editId && !q.swl && q.band === band && (q.mode || "") === mode) dupe = q; });
+  if (!S.ui.swl && dupe) badges.push('<span class="badge warn">Déjà contacté sur ' + band + (mode ? ' en ' + esc(mode) : "") + ' le ' + fDate(qLocal(dupe).date) + '</span>');
+  var others = hist.filter(function(q){ return q.id !== editId; });
+  badges.push('<span class="badge">' + (others.length ? others.length + (others.length > 1 ? " contacts précédents" : " contact précédent") : "Premier contact") + '</span>');
+  h += '<div class="badges">' + badges.join("") + '</div>';
+
+  var gear = {};
+  others.forEach(function(q){ ["rig","ant","mic","opwr","email","contest"].forEach(function(k){ if (!gear[k] && q[k]) gear[k] = q[k]; }); });
+  var gl = [["rig","Radio"],["ant","Antenne"],["mic","Micro"],["opwr","Puissance"],["contest","N° contest"]].filter(function(p){ return gear[p[0]]; });
+  if (gl.length || gear.email) {
+    h += '<dl class="gear">' + gl.map(function(p){ return '<div><dt>' + p[1] + '</dt><dd>' + esc(gear[p[0]]) + '</dd></div>'; }).join("") +
+      (gear.email ? '<div><dt>Email</dt><dd><a href="mailto:' + esc(gear.email) + '">' + esc(gear.email) + '</a></dd></div>' : "") + '</dl>';
+  }
+  if (others.length) {
+    h += '<ul class="hist">' + others.slice(0, 5).map(function(q){
+      var lq = qLocal(q);
+      return '<li><span class="mono">' + fDate(lq.date, true) + " " + fTime(lq.time) +
+        '</span><span class="mono"><b>' + esc(q.band || "?") + '</b> ' + esc(q.mode || "") + '</span><span class="who">' + esc([q.name, q.qth].filter(Boolean).join(", ")) + (q.swl ? '<span class="tag-swl">écoute</span>' : "") + '</span></li>';
+    }).join("") + '</ul>';
+  }
+  var k = opKey(key);
+  h += '<div class="st-notes"><label for="opNote">Mes notes sur ' + esc(fq.call) + ' (gardées d\u2019un QSO à l\u2019autre)</label><textarea id="opNote" placeholder="Matériel, antenne, club, QSL…">' + esc(S.ops[k] || "") + '</textarea></div>';
+  if (!isCB(fq.call)) {
+    var base = key;
+    h += '<div class="links"><a href="https://www.qrz.com/db/' + encodeURIComponent(base) + '" target="_blank" rel="noopener">Fiche QRZ.com</a>' +
+      '<a href="https://www.hamqth.com/' + encodeURIComponent(base) + '" target="_blank" rel="noopener">Fiche HamQTH</a></div>';
+  }
+  if (g) h += '<div class="links"><button class="linkbtn" id="seeOnMap">Voir sur la carte</button></div>';
+
+  var active = document.activeElement && document.activeElement.id === "opNote";
+  if (active) return;
+  var cc = g && g.cc ? COUNTRY_BY_NAME[g.cc] : ctry;
+  CORR_ZONE = (g || ctry) ? zoneFor(cc || null, g ? g.lat : (ctry ? ctry.lat : null), g ? g.lon : (ctry ? ctry.lon : null), "") : null;
+  if (CORR_ZONE && CORR_ZONE.tz === DEVICE_TZ && !cc) CORR_ZONE = null;
+  box.innerHTML = h;
+  updateCorrTime();
+  $("opNote").addEventListener("input", function(){
+    var v = this.value;
+    S.ops[k] = v; saveLocal();
+    clearTimeout(noteT);
+    noteT = setTimeout(function(){ var o = {}; o[k] = v.trim() ? v : null; write("ops", o); }, 900);
+  });
+  var sm = $("seeOnMap");
+  if (sm) sm.addEventListener("click", function(){ if (isNarrow()) setView("map"); else showTab("map"); focusMap(g); });
+}
+
+/* ---------- Journal ---------- */
+function matchQ(q, qv){
+  if ((q.call || "").indexOf(qv) >= 0 || (q.call || "").replace(/ /g, "").indexOf(qv.replace(/ /g, "")) >= 0) return true;
+  if ((q.band || "").toUpperCase() === qv || (q.mode || "") === qv) return true;
+  var n = norm(qv);
+  return [q.name, q.qth, q.pays, q._c ? q._c.name : "", q.rig, q.ant, q.note].some(function(x){ return x && norm(x).indexOf(n) >= 0; });
+}
+function renderLog(){
+  var qv = ($("logSearch").value || "").trim().toUpperCase();
+  var list = qv ? SORTED.filter(function(q){ return matchQ(q, qv); }) : SORTED;
+  var el = $("logList");
+  if (!SORTED.length) { el.innerHTML = '<div class="empty">Ton journal est vide. Saisis un indicatif et une fréquence, puis Entrée, ou importe ta base Access.</div>'; return; }
+  if (!list.length) { el.innerHTML = '<div class="empty">Aucun QSO ne correspond à « ' + esc(qv) + ' ».</div>'; return; }
+  var max = 250;
+  el.innerHTML = list.slice(0, max).map(function(q){
+    var c = q._c;
+    var place = [q.qth, c ? flag(c.iso) + " " + c.name : q.pays].filter(Boolean).join(", ");
+    var extra = [place, q.name, q.call2 ? "avec " + q.call2 : "", q.st && stations().length > 1 ? "depuis " + q.st : "", q.note].filter(Boolean).join(" – ");
+    return '<button class="qrow' + (q.id === editId ? " sel" : "") + '" data-id="' + esc(q.id) + '">' +
+      '<span class="t">' + (function(){ var lq = qLocal(q); return fDate(lq.date, true) + "<br>" + fTime(lq.time); })() + '</span>' +
+      '<span class="c">' + esc(q.call) + (q.swl ? '<span class="tag-swl">écoute</span>' : "") + (q.video ? '<span class="tag-vid" title="' + esc(q.video) + '">vidéo</span>' : "") + '</span>' +
+      '<span class="m"><span class="bd">' + esc(q.band || "?") + '</span> ' + esc(q.mode || "") + "<br>" + esc(q.swl ? (q.rr || "") : [q.rs, q.rr].filter(Boolean).join(" / ")) + '</span>' +
+      '<span class="x">' + esc(extra) + '</span>' +
+      '<span class="dk">' + (q._d ? (q._g.prec === "pays" || q._g.prec === "région" ? "≈ " : "") + km(q._d.d) : "") + '</span></button>';
+  }).join("") + (list.length > max ? '<div class="more-rows">' + (list.length - max) + ' QSO plus anciens : affine la recherche pour les voir.</div>' : "");
+}
+
+/* ---------- Carte ---------- */
+var chart = null, mapLoading = null, mapPts = [];
+function loadScript(src){
+  return new Promise(function(res, rej){ var s = document.createElement("script"); s.src = src; s.onload = res; s.onerror = function(){ rej(new Error(src)); }; document.head.appendChild(s); });
+}
+function ensureMap(){
+  if (mapLoading) return mapLoading;
+  $("mapMsg").textContent = "Chargement de la carte…"; $("mapMsg").hidden = false;
+  mapLoading = loadScript("https://cdn.jsdelivr.net/npm/echarts@4.9.0/dist/echarts.min.js")
+    .then(function(){ return loadScript("https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/js/world.js"); })
+    .then(function(){
+      $("mapMsg").hidden = true;
+      chart = window.echarts.init($("map"));
+      chart.on("click", function(p){ if (p.data && p.data.ids) showPick(p.data); });
+      window.addEventListener("resize", function(){ if (chart) chart.resize(); });
+      renderMap(true);
+    }, function(){
+      mapLoading = null;
+      $("mapMsg").textContent = "La carte n\u2019a pas pu se charger (connexion ?). Réessaie en rouvrant l\u2019onglet.";
+    });
+  return mapLoading;
+}
+function css(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+var PREC_COL = {"locator":"--accent", "ville":"--accent", "département":"--pin2", "région":"--pin2", "pays":"--warn"};
+function buildPts(){
+  var groups = {};
+  SORTED.forEach(function(q){
+    if (!q._g) return;
+    var k = q._g.lat.toFixed(2) + "," + q._g.lon.toFixed(2);
+    var g = groups[k] = groups[k] || {lat:q._g.lat, lon:q._g.lon, prec:q._g.prec, label:q._g.label, ids:[], d:q._d, homes:{}};
+    g.ids.push(q.id);
+    var hp = qHome(q);
+    if (hp) g.homes[hp.lat.toFixed(3) + "," + hp.lon.toFixed(3)] = hp;
+  });
+  return Object.keys(groups).map(function(k){ return groups[k]; });
+}
+function homePts(){
+  var hs = {};
+  if (HOME) hs[HOME.lat.toFixed(3) + "," + HOME.lon.toFixed(3)] = {lat:HOME.lat, lon:HOME.lon, label:(activeSt().name || "") + " – " + HOME.label, act:true};
+  SORTED.forEach(function(q){
+    if (typeof q.mylat !== "number") return;
+    var k = q.mylat.toFixed(3) + "," + q.mylon.toFixed(3);
+    if (!hs[k]) hs[k] = {lat:q.mylat, lon:q.mylon, label:(q.st || "Ma station") + (q.myqth ? " – " + q.myqth : "")};
+  });
+  return Object.keys(hs).map(function(k){ return hs[k]; });
+}
+function renderMap(fit){
+  var placed = 0, unplaced = [];
+  SORTED.forEach(function(q){ if (q._g) placed++; else unplaced.push(q); });
+  $("mapInfo").innerHTML = "<b>" + placed + "</b> fiche" + (placed > 1 ? "s" : "") + " placée" + (placed > 1 ? "s" : "") + " sur " + SORTED.length +
+    (HOME ? "" : ". Indique ta ville ou ton locator dans les réglages pour tracer les distances.") +
+    (unplaced.length ? '<br>Sans position : ' + unplaced.slice(0, 12).map(function(q){ return '<button class="linkbtn" data-id="' + esc(q.id) + '">' + esc(q.call) + '</button>'; }).join(" ") + (unplaced.length > 12 ? " …" : "") : "");
+  if (!chart) return;
+  mapPts = buildPts();
+  var land = css("--land"), border = css("--landline"), ink = css("--ink"), surf = css("--surface");
+  var data = mapPts.map(function(p){
+    return {name:p.label, value:[p.lon, p.lat, p.ids.length], ids:p.ids, prec:p.prec, d:p.d,
+      symbolSize: Math.min(26, 8 + Math.sqrt(p.ids.length) * 4), itemStyle:{color:css(PREC_COL[p.prec]), borderColor:surf, borderWidth:1.5}};
+  });
+  var series = [];
+  var lines = [];
+  mapPts.forEach(function(p){ Object.keys(p.homes).forEach(function(k){ var h = p.homes[k]; lines.push({coords:[[h.lon, h.lat], [p.lon, p.lat]]}); }); });
+  if (lines.length) series.push({type:"lines", coordinateSystem:"geo", silent:true, zlevel:1, lineStyle:{color:css("--accent"), opacity:0.28, width:1, curveness:0.18}, data:lines});
+  series.push({type:"scatter", coordinateSystem:"geo", zlevel:2, data:data});
+  var hps = homePts();
+  if (hps.length) series.push({type:"scatter", coordinateSystem:"geo", zlevel:3, symbol:"diamond",
+    data:hps.map(function(h){ return {name:h.label, value:[h.lon, h.lat], home:true, symbolSize:h.act ? 17 : 12, itemStyle:{color:ink, opacity:h.act ? 1 : 0.6, borderColor:surf, borderWidth:2}}; })});
+  var opt = {
+    backgroundColor:"transparent",
+    tooltip:{trigger:"item", confine:true, backgroundColor:surf, borderColor:border, borderWidth:1, textStyle:{color:ink, fontFamily:"Barlow, sans-serif"},
+      formatter:function(p){
+        if (p.data && p.data.home) return "<b>" + esc(p.data.name) + "</b>";
+        if (!p.data || !p.data.ids) return "";
+        var qs = p.data.ids.map(function(id){ return S.qsos[id]; }).filter(Boolean);
+        var head = "<b>" + esc(p.data.name) + "</b>" + (p.data.d ? " – " + km(p.data.d.d) : "") + '<br><span style="opacity:.7">' + esc(PREC_TXT[p.data.prec]) + "</span>";
+        return head + "<br>" + qs.slice(0, 6).map(function(q){ return esc(q.call) + (q.name ? " (" + esc(q.name) + ")" : "") + " – " + fDate(qLocal(q).date, true); }).join("<br>") + (qs.length > 6 ? "<br>+ " + (qs.length - 6) + " autres" : "");
+      }},
+    geo:{map:"world", roam:true, scaleLimit:{min:1, max:60},
+      itemStyle:{areaColor:land, borderColor:border, borderWidth:0.6}, emphasis:{itemStyle:{areaColor:css("--landhi")}, label:{show:false}}, label:{show:false}, silent:false},
+    series:series
+  };
+  var cur = null;
+  try { cur = chart.getOption(); } catch (e) {}
+  var gz = (!fit && cur && cur.geo && cur.geo[0] && cur.geo[0].center) ? cur.geo[0] : null;
+  if (gz) { opt.geo.center = gz.center; opt.geo.zoom = gz.zoom; }
+  else { opt.geo.center = [HOME ? HOME.lon : 4, HOME ? HOME.lat + 3 : 50]; opt.geo.zoom = 4.2; }
+  chart.setOption(opt, true);
+}
+function focusMap(g){
+  ensureMap().then(function(){ if (chart && g) chart.setOption({geo:{center:[g.lon, g.lat], zoom:9}}); });
+}
+function showPick(d){
+  var qs = d.ids.map(function(id){ return S.qsos[id]; }).filter(Boolean);
+  $("mapPick").innerHTML = '<h3>' + esc(d.name) + (d.d ? " – " + km(d.d.d) : "") + '</h3>' +
+    qs.map(function(q){ var lq = qLocal(q); return '<button class="qrow" data-id="' + esc(q.id) + '"><span class="t">' + fDate(lq.date, true) + "<br>" + fTime(lq.time) + '</span><span class="c">' + esc(q.call) + '</span><span class="m"><span class="bd">' + esc(q.band || "?") + '</span><br>' + esc(q.rr || "") + '</span><span class="x">' + esc([q.name, q.qth, q.pays].filter(Boolean).join(", ")) + '</span></button>'; }).join("");
+  $("mapPick").hidden = false;
+}
+function showTab(t){
+  S.ui.tab = t;
+  $("tabLog").setAttribute("aria-selected", String(t === "log"));
+  $("tabMap").setAttribute("aria-selected", String(t === "map"));
+  $("panelLog").hidden = t !== "log";
+  $("panelMap").hidden = t !== "map";
+  if (isNarrow() && S.ui.view !== t && S.ui.view !== "entry") { S.ui.view = t; document.body.setAttribute("data-view", t); }
+  if (t === "map") { ensureMap(); if (chart) setTimeout(function(){ chart.resize(); }, 40); }
+}
+/* ---------- Export ---------- */
+function asc(v){ return String(v).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7E]/g, ""); }
+function af(n, v){ if (v === null || v === undefined || v === "") return ""; v = asc(v); return v ? "<" + n + ":" + v.length + ">" + v + " " : ""; }
+function adifAll(){
+  var out = "Export Carnet de trafic\n" + af("ADIF_VER", "3.1.4") + af("PROGRAMID", "CarnetTrafic") + "<EOH>\n";
+  SORTED.slice().reverse().forEach(function(q){
+    var am = adifMode(q.mode, q.freq);
+    var comment = [q.call2 ? "QSO avec " + q.call2 : "", q.mic ? "Micro " + q.mic : "", q.ant ? "Antenne " + q.ant : "", q.note].filter(Boolean).join(" - ");
+    out += af("CALL", q.call) + af("QSO_DATE", q.date) + af("TIME_ON", q.ton) + af("TIME_OFF", q.toff) +
+      af("BAND", ADIF_BANDS[q.band] || "") + af("FREQ", q.freq ? String(+(+q.freq).toFixed(6)) : "") + af("MODE", am.mode) + af("SUBMODE", am.sub) +
+      af("RST_SENT", q.rs) + af("RST_RCVD", q.rr) + af("NAME", q.name) + af("QTH", q.qth) + af("COUNTRY", q._c ? q._c.name : q.pays) + af("GRIDSQUARE", q.loc) +
+      af("RIG", q.rig) + af("RX_PWR", q.opwr) + af("EMAIL", q.email) + af("SRX_STRING", q.contest) + af("COMMENT", comment) +
+      af("TX_PWR", q.pwr) + af("STATION_CALLSIGN", q.mycall) + af("MY_GRIDSQUARE", q.myloc) + af("MY_CITY", q.myqth) + af("MY_RIG", q.myrig) + af("MY_ANTENNA", q.myant) + (q.swl ? af("SWL", "Y") : "") + "<EOR>\n";
+  });
+  return out;
+}
+function csvAll(){
+  var cell = function(v){ v = String(v === null || v === undefined ? "" : v); return /[;"\n]/.test(v) ? '"' + v.replace(/"/g, '""') + '"' : v; };
+  var rows = [["Date (UTC)","Heure (UTC)","Date locale","Heure locale","Fuseau","Ma station","Indicatif","Fréquence MHz","Bande","Mode","Signal donné","Signal reçu","Prénom","Ville","Pays","Locator","Distance km","Radio","Micro","Antenne","Puissance","Email","N° contest","Note","Écoute","En QSO avec"]];
+  SORTED.forEach(function(q){
+    var lq = utcToLocal(q.date, q.ton, q.tz && tzValid(q.tz) ? {tz:q.tz} : (typeof q.tzoff === "number" ? {off:q.tzoff} : (HOME ? HOME.zone : {tz:DEVICE_TZ})));
+    rows.push([fDate(q.date), fTime(q.ton), fDate(lq.date), fTime(lq.time), q.tz || (typeof q.tzoff === "number" ? fmtOff(q.tzoff) : ""), q.st || "", q.call, q.freq ? String(q.freq).replace(".", ",") : "", q.band, q.mode, q.rs, q.rr, q.name, q.qth,
+      q._c ? q._c.name : q.pays, q.loc, q._d ? Math.round(q._d.d) : "", q.rig, q.mic, q.ant, q.opwr, q.email, q.contest, q.note, q.swl ? "oui" : "", q.call2]);
+  });
+  return "\uFEFF" + rows.map(function(r){ return r.map(cell).join(";"); }).join("\r\n");
+}
+function copyText(t, msg){
+  var ok = function(){ toast(msg || "Copié"); };
+  var fallback = function(){
+    var ta = document.createElement("textarea"); ta.value = t; ta.style.position = "fixed"; ta.style.opacity = "0";
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand("copy"); ok(); } catch (e) { toast("Copie impossible sur ce navigateur"); }
+    ta.remove();
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(ok, fallback); else fallback();
+}
+function stamp(){ return utcParts().date.replace(/-/g, ""); }
+function isFramed(){ try { return window.self !== window.top; } catch (e) { return true; } }
+function inClaude(){ return !!(window.claude && typeof window.claude.use === "function"); }
+var EXT_DESC = {json:"Sauvegarde du carnet", adi:"Fichier ADIF", csv:"Tableau CSV", txt:"Texte", webm:"Vidéo WebM", mp4:"Vidéo MP4"};
+function saveAs(data, name, mime, claudeName){
+  var blob = data instanceof Blob ? data : new Blob([data], {type:mime});
+  var ext = (name.match(/\.([a-z0-9]+)$/i) || [0, "txt"])[1].toLowerCase();
+  if (window.showSaveFilePicker && !isFramed()) {
+    var accept = {}; accept[(mime || blob.type || "application/octet-stream").split(";")[0]] = ["." + ext];
+    var picker;
+    try { picker = window.showSaveFilePicker({suggestedName:name, types:[{description:EXT_DESC[ext] || "Fichier", accept:accept}]}); }
+    catch (e) { return fallbackSave(blob, name, claudeName); }
+    return picker.then(function(h){
+      return h.createWritable().then(function(w){ return w.write(blob).then(function(){ return w.close(); }); }).then(function(){ toast("Enregistré : " + h.name); return h.name; });
+    }, function(e){
+      if (e && e.name === "AbortError") return null;
+      return fallbackSave(blob, name, claudeName);
+    });
+  }
+  return fallbackSave(blob, name, claudeName);
+}
+function fallbackSave(blob, name, claudeName){
+  if (inClaude()) {
+    return window.claude.use("downloads").then(function(d){
+      if (!d) return shareOrLink(blob, name);
+      var fn = claudeName || name;
+      return d.save({filename:fn, data:blob}).then(function(){ toast("Enregistré : " + fn); return fn; }, function(e){
+        if (e && e.code === "declined") return null;
+        toast("Enregistrement impossible ici (" + ((e && e.code) || "erreur") + ")");
+        return null;
+      });
+    });
+  }
+  return shareOrLink(blob, name);
+}
+function shareOrLink(blob, name){
+  var coarse = window.matchMedia && window.matchMedia("(pointer:coarse)").matches;
+  if (coarse && navigator.canShare && navigator.share && typeof File === "function") {
+    try {
+      var f = new File([blob], name, {type:blob.type || "application/octet-stream"});
+      if (navigator.canShare({files:[f]})) {
+        return navigator.share({files:[f], title:name}).then(function(){ toast("Choisis « Enregistrer dans Fichiers » ou une appli"); return name; }, function(e){
+          if (e && e.name === "AbortError") return null;
+          return dlLink(blob, name);
+        });
+      }
+    } catch (e) {}
+  }
+  return Promise.resolve(dlLink(blob, name));
+}
+function dlLink(blob, name){
+  var a = document.createElement("a"); a.href = URL.createObjectURL(blob); a.download = name;
+  document.body.appendChild(a); a.click();
+  setTimeout(function(){ URL.revokeObjectURL(a.href); a.remove(); }, 4000);
+  toast("Téléchargé : " + name);
+  return name;
+}
+function saveFile(name, txt, mime, altName){ return saveAs(txt, name, mime, altName); }
+
+/* ---------- Sauvegarde complète ---------- */
+function backupJson(){
+  return JSON.stringify({format:"carnet-trafic", version:4, saved:new Date().toISOString(),
+    qsos:Object.keys(S.qsos).map(function(id){ var o = stripTmp(S.qsos[id], false); o.id = id; return o; }),
+    ops:S.ops, settings:S.settings}, null, 1);
+}
+function doBackup(){
+  var l = nowIn(stZone(activeSt()));
+  saveAs(backupJson(), "carnet-trafic-" + l.date + "-" + l.time + ".json", "application/json").then(function(n){
+    if (n) { S.ui.lastBackup = Date.now(); S.ui.backupCount = SORTED.length; saveLocal(); renderBackupBox(); }
+  });
+}
+function renderBackupBox(){
+  var box = $("bkBox"); if (!box) return;
+  if (cloud || !SORTED.length) { box.hidden = true; return; }
+  var last = S.ui.lastBackup || 0, days = last ? Math.floor((Date.now() - last) / 86400000) : -1;
+  var added = SORTED.length - (S.ui.backupCount || 0);
+  if (last && days < 14 && added < 20) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = '<p>' + (last ? "Dernière sauvegarde il y a " + days + " jour" + (days > 1 ? "s" : "") + (added > 0 ? ", " + added + " QSO depuis" : "") + "." : "Ton carnet n\u2019a encore jamais été sauvegardé.") +
+    " Les fiches sont gardées dans cet appareil : une sauvegarde te protège en cas de perte ou de changement de téléphone.</p>" +
+    '<div class="actions"><button class="btn primary" id="bkNow">Enregistrer une sauvegarde…</button><button class="btn" id="bkLater">Plus tard</button></div>';
+  $("bkNow").addEventListener("click", doBackup);
+  $("bkLater").addEventListener("click", function(){ S.ui.lastBackup = Date.now() - 7 * 86400000; S.ui.backupCount = SORTED.length; saveLocal(); box.hidden = true; });
+}
+function restoreBackup(txt){
+  var o;
+  try { o = JSON.parse(txt); } catch (e) { toast("Ce fichier n\u2019est pas une sauvegarde lisible"); return; }
+  if (!o || o.format !== "carnet-trafic" || !Array.isArray(o.qsos)) { toast("Ce fichier n\u2019est pas une sauvegarde du carnet"); return; }
+  var list = o.qsos.map(function(q){ var c = Object.assign({}, q); delete c.id; delete c.dk; return c; });
+  if (o.ops && typeof o.ops === "object") {
+    var add = {};
+    Object.keys(o.ops).forEach(function(k){ if (o.ops[k] && !S.ops[k]) { add[k] = o.ops[k]; S.ops[k] = o.ops[k]; } });
+    if (Object.keys(add).length) write("ops", add);
+  }
+  if (o.settings && Array.isArray(o.settings.stations)) {
+    var have = {}, chg = false;
+    stations().forEach(function(st){ have[st.id] = 1; });
+    o.settings.stations.forEach(function(st){ if (!have[st.id]) { S.settings.stations.push(st); chg = true; } });
+    if (chg) { saveSettingsCloud(); applySettingsUI(); }
+  }
+  addImported(list, "la sauvegarde");
+}
+/* ---------- Import ADIF et Access ---------- */
+function parseAdif(txt){
+  var out = [], rec = {}, m;
+  var start = txt.search(/<eoh>/i);
+  var re = /<([a-z0-9_]+)(?::([0-9]+)(?::[a-z])?)?>/ig;
+  re.lastIndex = start >= 0 ? start + 5 : 0;
+  while ((m = re.exec(txt))) {
+    var tag = m[1].toLowerCase();
+    if (tag === "eor") { out.push(rec); rec = {}; continue; }
+    if (tag === "eoh") { rec = {}; continue; }
+    var len = parseInt(m[2] || "0", 10);
+    rec[tag] = txt.substr(re.lastIndex, len);
+    re.lastIndex += len;
+  }
+  return out;
+}
+function dupKey(call, date, ton){ return callKey(call) + "|" + (date || "") + "|" + String(ton || "").slice(0,4); }
+function addImported(list, label){
+  var seen = {}, added = 0, dup = 0, groups = {};
+  SORTED.forEach(function(q){
+    seen[dupKey(q.call, q.date, q.ton)] = 1;
+    if (q.src === "access" && !q.tzfix && q.date) { var c = localToUtc(q.date, q.ton || "0000", stZone(activeSt())); seen[dupKey(q.call, c.date, c.time)] = 1; }
+  });
+  list.forEach(function(q, i){
+    var k = dupKey(q.call, q.date, q.ton);
+    if (seen[k]) { dup++; return; }
+    seen[k] = 1;
+    var id = newId() + i.toString(36);
+    var dk = docKeyFor(q.date, null);
+    S.qsos[id] = Object.assign({dk:dk}, q);
+    (groups[dk] = groups[dk] || {})[id] = q;
+    added++;
+  });
+  Object.keys(groups).forEach(function(dk){ write(dk, groups[dk]); });
+  saveLocal(); refresh(true);
+  toast(added + " fiches importées" + (label ? " depuis " + label : "") + (dup ? ", " + dup + " doublons ignorés" : ""));
+}
+function importAdif(txt){
+  var list = [];
+  parseAdif(txt).forEach(function(r, i){
+    if (!r.call) return;
+    var f = parseFreq(r.freq), ton = (r.time_on || "").slice(0,4);
+    list.push({call:normCall(r.call), date:r.qso_date || "", ton:ton, toff:(r.time_off || ton).slice(0,4), freq:f || null,
+      band:bandOf(f) || (r.band || "").toLowerCase().replace("2190m", "2200m"), mode:fromAdifMode(r.mode, r.submode),
+      rs:r.rst_sent || "", rr:r.rst_rcvd || "", name:r.name || "", qth:r.qth || "", pays:r.country || "", loc:fmtLoc(r.gridsquare || ""),
+      rig:r.rig || "", opwr:r.rx_pwr || "", email:r.email || "", contest:r.srx_string || "", mic:"", ant:"",
+      note:r.comment || r.notes || "", pwr:r.tx_pwr || "", swl:/^y/i.test(r.swl || "") ? 1 : 0, call2:"",
+      mycall:normCall(r.station_callsign || r.operator || ""), myloc:r.my_gridsquare || "", ts:Date.now() + i, src:"adif"});
+  });
+  addImported(list, "l\u2019ADIF");
+}
+var COLMAP = [
+  ["date", /^(DATE|DATE HEURE|HORODATAGE|QSO DATE)$|DATE/], ["heure", /^(HEURE|TIME|HEURE UTC)$/], ["call", /QRZ|INDICATIF|INDIC|CALL/],
+  ["freq", /FREQ/], ["rr", /SIGNAL|RST RECU|REPORT|RAPPORT|RST/], ["rs", /RST ENVOYE|DONNE/], ["pays", /PAYS|COUNTRY|NATION/],
+  ["qth", /VILLE|QTH|CITY|LOCALITE|COMMUNE/], ["name", /PRENOM|NAME|OPERATEUR|NOM/], ["mic", /MICRO/], ["ant", /ANTENNE|ANTENNA|AERIEN/],
+  ["opwr", /PUISSANCE|POWER|PWR|WATT/], ["email", /MAIL/], ["contest", /CONTEST/], ["loc", /LOCATOR|LOCATEUR|GRID|CARRE/],
+  ["mode", /^MODE/], ["rig", /RADIO|RIG|EMETTEUR|POSTE|TX|TRANSCEIVER/], ["note", /NOTE|COMMENT|REMARQ|OBS/]
+];
+function mapColumns(cols){
+  var used = {}, map = {};
+  COLMAP.forEach(function(p){
+    for (var i = 0; i < cols.length; i++) {
+      var n = norm(cols[i]);
+      if (!used[i] && p[1].test(n)) { map[p[0]] = cols[i]; used[i] = 1; return; }
+    }
+  });
+  return map;
+}
+function accessToQsos(t){
+  var m = mapColumns(t.cols), out = [];
+  t.rows.forEach(function(r, i){
+    var call = cleanTxt(r[m.call]); if (!call) return;
+    var dt = r[m.date], date = "", ton = "";
+    if (typeof dt === "string" && /^[0-9]{4}-/.test(dt)) { date = dt.slice(0,10).replace(/-/g, ""); ton = dt.slice(11,16).replace(":", ""); }
+    if (m.heure && r[m.heure]) { var hv = String(r[m.heure]); var hm = hv.match(/([0-9]{1,2})[:hH]([0-9]{2})/); if (hm) ton = ("0" + hm[1]).slice(-2) + hm[2]; else if (/T/.test(hv)) ton = hv.slice(11,16).replace(":", ""); }
+    if (date === "18991230") date = "";
+    if (date) { var cz = stZone(activeSt()), cvt = localToUtc(date, ton || "0000", cz); date = cvt.date; ton = cvt.time; }
+    var f = parseFreq(r[m.freq]);
+    var g = function(k){ return m[k] ? cleanTxt(r[m[k]]) : ""; };
+    var callStd = isCB(call) ? normCall(call) : normCall(call).replace(/ /g, "");
+    out.push({call:callStd, date:date, ton:ton, toff:ton, freq:f || null, band:bandOf(f), mode:g("mode").toUpperCase(),
+      rs:g("rs").toUpperCase(), rr:g("rr").toUpperCase(), name:g("name") ? titleCase(g("name")) : "", qth:g("qth"), pays:g("pays"), loc:fmtLoc(g("loc")),
+      rig:g("rig"), mic:g("mic"), ant:g("ant"), opwr:g("opwr"), email:g("email"), contest:g("contest"), note:g("note"),
+      pwr:"", swl:0, call2:"", mycall:activeSt().call || S.settings.mycall || "", myloc:"", ts:Date.now() + i, src:"access", tzfix:1, tz:stZone(activeSt()).tz || "",
+      accId:r["N°"] !== undefined ? r["N°"] : (r.ID !== undefined ? r.ID : null)});
+  });
+  return out;
+}
+var ACCESS_TABLES = null;
+function importAccess(ab, fname){
+  var tables;
+  try { tables = readAccess(ab); } catch (e) { toast("Lecture Access impossible : " + e.message); return; }
+  tables = tables.filter(function(t){ var m = mapColumns(t.cols); return m.call && (m.date || m.freq) && t.rows.length; });
+  if (!tables.length) { toast("Aucune table de QSO trouvée dans " + fname); return; }
+  if (tables.length === 1) { addImported(accessToQsos(tables[0]), "« " + tables[0].name + " »"); return; }
+  ACCESS_TABLES = tables;
+  $("importPick").innerHTML = '<p>Ta base contient plusieurs tables de QSO. Laquelle importer ?</p>' +
+    tables.map(function(t, i){ return '<button class="btn" data-t="' + i + '">' + esc(t.name) + ' (' + t.rows.length + ' fiches)</button>'; }).join("") +
+    '<button class="btn" data-t="cancel">Annuler</button>';
+  $("importPick").hidden = false;
+}
+
+/* ---------- Vidéo du QSO ---------- */
+var VID = {stream:null, rec:null, chunks:[], blob:null, url:"", mime:"", facing:"user", t0:0, timer:null, saved:false, armedClose:false};
+function vidMime(){
+  if (!window.MediaRecorder) return null;
+  var c = ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
+  if (typeof MediaRecorder.isTypeSupported !== "function") return "";
+  for (var i = 0; i < c.length; i++) if (MediaRecorder.isTypeSupported(c[i])) return c[i];
+  return "";
+}
+function vidState(st){
+  var live = st === "live" || st === "rec", done = st === "done";
+  $("vidLive").hidden = !live && st !== "idle";
+  $("vidPlay").hidden = !done;
+  $("recBadge").hidden = st !== "rec";
+  $("vidRec").hidden = done || st === "error";
+  $("vidRec").classList.toggle("on", st === "rec");
+  $("vidRec").setAttribute("aria-label", st === "rec" ? "Arrêter l\u2019enregistrement" : "Démarrer l\u2019enregistrement");
+  $("vidFlip").hidden = done || st === "rec" || st === "error" || !VID.multiCam;
+  $("vidNativeLbl").hidden = st === "rec" || done;
+  $("vidRetake").hidden = !done;
+  $("vidSave").hidden = !done;
+  if (live || done) $("vidMsg").hidden = true;
+}
+function vidMsg(t){ var m = $("vidMsg"); m.textContent = t; m.hidden = false; $("vidLive").hidden = true; }
+function stopStream(){ if (VID.stream) { VID.stream.getTracks().forEach(function(t){ t.stop(); }); VID.stream = null; } $("vidLive").srcObject = null; }
+function vidCallName(){ var c = parseCallField(F.fCall.value).call; return c ? c.replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "") : "QSO"; }
+function openVideo(){
+  closeMenu();
+  startTimeIfNeeded();
+  var c = parseCallField(F.fCall.value).call;
+  $("vidTitle").textContent = c ? "Vidéo du QSO avec " + c : "Vidéo du QSO";
+  $("videoSheet").hidden = false;
+  VID.saved = false; VID.armedClose = false; $("vidClose").removeAttribute("data-armed");
+  $("vidNative").setAttribute("capture", VID.facing === "user" ? "user" : "environment");
+  if (VID.blob) { vidState("done"); return; }
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || vidMime() === null) {
+    vidState("error");
+    vidMsg("Ce navigateur ne permet pas de filmer directement dans la page. Utilise « Filmer avec l\u2019appareil photo ».");
+    return;
+  }
+  startCam();
+}
+function startCam(){
+  stopStream();
+  vidState("idle"); vidMsg("Ouverture de la caméra…");
+  navigator.mediaDevices.getUserMedia({video:{facingMode:VID.facing, width:{ideal:1280}, height:{ideal:720}}, audio:true}).then(function(st){
+    VID.stream = st;
+    var v = $("vidLive"); v.srcObject = st; v.muted = true;
+    v.classList.toggle("mirror", VID.facing === "user");
+    var p = v.play(); if (p && p.catch) p.catch(function(){});
+    vidState("live");
+    if (navigator.mediaDevices.enumerateDevices) navigator.mediaDevices.enumerateDevices().then(function(d){
+      VID.multiCam = d.filter(function(x){ return x.kind === "videoinput"; }).length > 1;
+      $("vidFlip").hidden = !VID.multiCam || !!VID.rec;
+    });
+  }).catch(function(e){
+    vidState("error");
+    var n = e && e.name;
+    if (n === "NotAllowedError" || n === "SecurityError") vidMsg("L\u2019accès à la caméra est refusé ou bloqué dans cette fenêtre. Autorise la caméra dans le navigateur, ouvre le fichier téléchargé, ou utilise « Filmer avec l\u2019appareil photo ».");
+    else if (n === "NotFoundError" || n === "OverconstrainedError") vidMsg("Aucune caméra trouvée sur cet appareil.");
+    else if (n === "NotReadableError") vidMsg("La caméra est déjà utilisée par une autre application.");
+    else vidMsg("Caméra indisponible (" + (n || "erreur") + ").");
+  });
+}
+function fmtDur(s){ return ("0" + Math.floor(s / 60)).slice(-2) + ":" + ("0" + (s % 60)).slice(-2); }
+function recToggle(){
+  if (VID.rec && VID.rec.state === "recording") { VID.rec.stop(); return; }
+  if (!VID.stream) { startCam(); return; }
+  var mime = vidMime(), rec;
+  try { rec = mime ? new MediaRecorder(VID.stream, {mimeType:mime, videoBitsPerSecond:2500000}) : new MediaRecorder(VID.stream); }
+  catch (e) { try { rec = new MediaRecorder(VID.stream); } catch (e2) { vidMsg("Enregistrement impossible sur ce navigateur."); return; } }
+  VID.rec = rec; VID.chunks = []; VID.mime = rec.mimeType || mime || "video/webm";
+  rec.ondataavailable = function(ev){ if (ev.data && ev.data.size) VID.chunks.push(ev.data); };
+  rec.onstop = function(){
+    clearInterval(VID.timer);
+    setBlob(new Blob(VID.chunks, {type:VID.mime.split(";")[0]}));
+    VID.rec = null;
+    stopStream();
+  };
+  rec.start(1000);
+  VID.t0 = Date.now();
+  $("recTime").textContent = "00:00";
+  VID.timer = setInterval(function(){ $("recTime").textContent = fmtDur(Math.floor((Date.now() - VID.t0) / 1000)); }, 500);
+  vidState("rec");
+}
+function setBlob(b){
+  VID.blob = b; VID.saved = false;
+  if (VID.url) URL.revokeObjectURL(VID.url);
+  VID.url = URL.createObjectURL(b);
+  var p = $("vidPlay"); p.src = VID.url;
+  vidState("done");
+  $("vidNote").textContent = "Vidéo prête (" + (b.size / 1048576).toFixed(1) + " Mo). Enregistre-la avant de fermer : elle n\u2019est pas gardée dans le carnet, seul son nom de fichier l\u2019est.";
+}
+function vidExt(){ var t = (VID.blob && VID.blob.type) || VID.mime || ""; return /mp4/.test(t) ? "mp4" : /quicktime|mov/.test(t) ? "mov" : "webm"; }
+function vidSave(){
+  if (!VID.blob) return;
+  var l = nowIn(formZone()), ext = vidExt();
+  var name = "QSO_" + vidCallName() + "_" + l.date + "-" + l.time + "." + ext;
+  var type = VID.blob.type || (ext === "mp4" ? "video/mp4" : "video/webm");
+  saveAs(VID.blob, name, type, ext === "mov" ? name.replace(/\.mov$/, ".mp4") : null).then(function(saved){
+    if (!saved) return;
+    VID.saved = true;
+    curVideo = saved; showAttach();
+    if (editId && S.qsos[editId]) toast("Vidéo enregistrée. Valide le QSO pour l\u2019y rattacher.");
+  });
+}
+function vidReset(){
+  if (VID.url) URL.revokeObjectURL(VID.url);
+  VID.blob = null; VID.url = ""; VID.saved = false;
+  $("vidPlay").removeAttribute("src");
+  $("vidNote").textContent = "La vidéo reste sur ton appareil : rien n\u2019est envoyé en ligne.";
+}
+function closeVideo(force){
+  if (!force && VID.blob && !VID.saved) {
+    var b = $("vidClose");
+    if (b.getAttribute("data-armed") !== "1") { b.setAttribute("data-armed", "1"); toast("Vidéo non enregistrée : appuie encore sur ✕ pour la jeter"); return; }
+  }
+  if (VID.rec && VID.rec.state === "recording") { VID.rec.onstop = null; VID.rec.stop(); clearInterval(VID.timer); VID.rec = null; }
+  stopStream();
+  if (force || VID.saved || !VID.blob || $("vidClose").getAttribute("data-armed") === "1") vidReset();
+  $("videoSheet").hidden = true;
+  $("btnVideo").focus();
+}
+
+/* ---------- Installation (application autonome) ---------- */
+var installEvt = null;
+function isStandalone(){ return (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone === true; }
+function platform(){
+  var ua = navigator.userAgent || "", touchMac = /Macintosh/.test(ua) && navigator.maxTouchPoints > 1;
+  if (/iPhone|iPad|iPod/.test(ua) || touchMac) return "ios";
+  if (/Android/.test(ua)) return "android";
+  if (/Macintosh/.test(ua)) return /Chrome|Edg\//.test(ua) ? "desktop" : "macsafari";
+  return "desktop";
+}
+var SHARE_ICO = '<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12M8 7l4-4 4 4"/><path d="M5 12v8h14v-8"/></svg>';
+function openInstall(){
+  closeMenu();
+  var p = platform(), h = "";
+  var web = location.protocol === "https:" || location.hostname === "localhost";
+  if (isStandalone()) h = '<p class="ok">Le carnet est déjà installé et tourne comme une application.</p>';
+  else if (inClaude()) h = '<p>Tu utilises ici la version hébergée dans Claude, qui ne peut pas s\u2019installer.</p><p>Pour un carnet autonome : enregistre d\u2019abord une sauvegarde (menu Fichier, « Enregistrer sous… »), mets en ligne le dossier de l\u2019application, installe-la, puis ouvre la sauvegarde dedans.</p>';
+  else if (!web) {
+    h = '<p>Ce fichier est ouvert directement depuis l\u2019ordinateur. Pour l\u2019<b>installer</b> sur un téléphone ou un PC, il doit être mis en ligne une fois sur un site en <b>https</b> (par exemple GitHub Pages), avec les fichiers du dossier fourni.</p>' +
+      '<p>Une fois en ligne, ouvre l\u2019adresse sur chaque appareil puis reviens dans ce menu : les étapes d\u2019installation s\u2019afficheront.</p>' +
+      '<p class="note-small">En attendant, ce fichier fonctionne tel quel dans le navigateur, sans connexion à Claude.</p>';
+  } else if (installEvt) {
+    h = '<p>Ton navigateur peut installer le carnet directement.</p><div class="actions"><button class="btn primary" id="instGo">Installer maintenant</button></div>';
+  } else if (p === "ios") {
+    h = '<p class="plat">iPhone et iPad (Safari)</p><ol><li>Touche le bouton Partager ' + SHARE_ICO + ' en bas de Safari.</li><li>Fais défiler et choisis <b>Sur l\u2019écran d\u2019accueil</b>.</li><li>Valide avec <b>Ajouter</b> : l\u2019icône Carnet apparaît sur l\u2019écran d\u2019accueil.</li></ol>' +
+      '<p class="note-small">Sur iPhone, l\u2019installation passe obligatoirement par Safari. Si tu es dans Chrome ou une autre appli, ouvre d\u2019abord cette adresse dans Safari.</p>';
+  } else if (p === "android") {
+    h = '<p class="plat">Android (Chrome, Edge, Samsung Internet)</p><ol><li>Ouvre le menu ⋮ du navigateur.</li><li>Choisis <b>Installer l\u2019application</b> ou <b>Ajouter à l\u2019écran d\u2019accueil</b>.</li><li>Confirme : le carnet s\u2019ouvre ensuite en plein écran comme une appli.</li></ol>';
+  } else if (p === "macsafari") {
+    h = '<p class="plat">Mac (Safari 17 ou plus récent)</p><ol><li>Menu <b>Fichier</b> de Safari.</li><li>Choisis <b>Ajouter au Dock…</b> puis <b>Ajouter</b>.</li></ol><p class="note-small">Avec Chrome ou Edge sur Mac, une icône d\u2019installation apparaît à droite de la barre d\u2019adresse.</p>';
+  } else {
+    h = '<p class="plat">PC et Mac (Chrome ou Edge)</p><ol><li>Clique sur l\u2019icône d\u2019installation à droite de la barre d\u2019adresse, ou ouvre le menu ⋮.</li><li>Choisis <b>Installer Carnet de trafic</b> (Chrome) ou <b>Applications &gt; Installer ce site en tant qu\u2019application</b> (Edge).</li><li>Le carnet s\u2019ouvre dans sa propre fenêtre et apparaît dans le menu Démarrer ou le Launchpad.</li></ol>' +
+      '<p class="note-small">Firefox sur ordinateur ne sait pas installer les applications web : utilise Chrome ou Edge pour l\u2019installation.</p>';
+  }
+  h += '<p class="note-small" style="margin-top:14px">Une fois installé, le carnet fonctionne sans Internet. Seul le fond de la carte a besoin d\u2019avoir été affiché une première fois en ligne. Tes fiches restent dans l\u2019appareil : utilise « Enregistrer sous… » pour les sauvegarder ou les passer d\u2019un appareil à l\u2019autre.</p>';
+  $("instBody").innerHTML = h;
+  $("installSheet").hidden = false;
+  var g = $("instGo");
+  if (g) g.addEventListener("click", function(){
+    var ev = installEvt; installEvt = null;
+    ev.prompt();
+    ev.userChoice.then(function(c){ $("installSheet").hidden = true; if (c && c.outcome === "accepted") toast("Carnet installé"); });
+  });
+}
+window.addEventListener("beforeinstallprompt", function(e){ e.preventDefault(); installEvt = e; });
+window.addEventListener("appinstalled", function(){ installEvt = null; toast("Carnet installé : retrouve-le avec les autres applis"); });
+function initPwa(){
+  if (isStandalone()) document.documentElement.classList.add("standalone");
+  if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost") && !inClaude()) {
+    navigator.serviceWorker.register("sw.js").then(function(reg){
+      var urls = ["https://cdn.jsdelivr.net/npm/echarts@4.9.0/dist/echarts.min.js", "https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/js/world.js"];
+      var send = function(w){ if (w) w.postMessage({type:"precache-map", urls:urls}); };
+      if (reg.active) send(reg.active);
+      else navigator.serviceWorker.ready.then(function(r){ send(r.active); });
+    }).catch(function(){});
+  }
+  if (navigator.storage && navigator.storage.persist && !inClaude()) navigator.storage.persist().catch(function(){});
+  var v = (location.search.match(/[?&]vue=(saisie|journal|carte)/) || [])[1];
+  if (v) setView(v === "saisie" ? "entry" : v === "journal" ? "log" : "map");
+}
+
+/* ---------- Réglages et stations ---------- */
+var TZ_CHOICES = [["","Automatique (selon le lieu)"],["Europe/Paris","France métropolitaine"],["Europe/London","Royaume-Uni, Irlande"],["Europe/Lisbon","Portugal"],
+  ["Atlantic/Canary","Canaries"],["Europe/Berlin","Europe centrale"],["Europe/Athens","Europe de l\u2019Est"],["Africa/Casablanca","Maroc"],["America/Guadeloupe","Antilles"],
+  ["America/Cayenne","Guyane"],["Indian/Reunion","La Réunion"],["Pacific/Noumea","Nouvelle-Calédonie"],["Pacific/Tahiti","Tahiti"],["UTC","UTC"]];
+var STW = [];
+var THEME_ICONS = {
+  "":'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="8.5"/><path d="M12 3.5v17A8.5 8.5 0 0 0 12 3.5z" fill="currentColor"/></svg>',
+  light:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>',
+  dark:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linejoin="round"><path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/></svg>'
+};
+var THEME_TXT = {"":"automatique (comme le système)", light:"clair", dark:"sombre"};
+function curTheme(){ return S.ui.theme !== undefined && S.ui.theme !== null ? S.ui.theme : (S.settings.theme || ""); }
+function applyTheme(){
+  var t = curTheme();
+  if (t) document.documentElement.setAttribute("data-theme", t);
+  else document.documentElement.removeAttribute("data-theme");
+  var b = $("btnTheme");
+  if (b) { b.innerHTML = THEME_ICONS[t] || THEME_ICONS[""]; b.setAttribute("aria-label", "Thème : " + THEME_TXT[t] + ". Changer"); b.title = "Thème : " + THEME_TXT[t]; }
+  var sel = $("sTheme"); if (sel) sel.value = t;
+  var m = document.querySelector('meta[name="theme-color"]');
+  if (m) m.setAttribute("content", css("--surface") || "#FFFFFF");
+  if (chart) renderMap(false);
+}
+function cycleTheme(){
+  var order = ["", "light", "dark"], t = curTheme();
+  S.ui.theme = order[(order.indexOf(t) + 1) % 3];
+  saveLocal(); applyTheme();
+  toast("Thème " + THEME_TXT[S.ui.theme]);
+}
+
+/* ---------- Vues (mobile) ---------- */
+function isNarrow(){ return window.matchMedia && window.matchMedia("(max-width: 999px)").matches; }
+function setView(v){
+  S.ui.view = v;
+  document.body.setAttribute("data-view", v);
+  Array.prototype.forEach.call(document.querySelectorAll(".bottomnav button"), function(b){
+    if (b.getAttribute("data-view") === v) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
+  });
+  if (v === "log" || v === "map") showTab(v);
+  if (isNarrow()) window.scrollTo(0, 0);
+  saveLocal();
+}
+function applySettingsUI(){
+  stations();
+  $("meCall").textContent = activeSt().call || S.settings.mycall || "";
+  $("sCall").value = S.settings.mycall || "";
+  if (!F.fPwr.value && !editId) F.fPwr.value = activeSt().pwr || "";
+  applyTheme();
+  renderStationBar();
+  updateHomeNote();
+}
+function posText(st){
+  var p = stPos(st);
+  if (!p) return "Lieu non reconnu : saisis une ville proche ou un locator.";
+  var l = nowIn(p.zone);
+  return "Position : " + p.label + " (" + p.lat.toFixed(2) + ", " + p.lon.toFixed(2) + "), heure locale " + fTime(l.time) + " " + (p.zone.approx ? "≈ " : "") + fmtOff(l.off) + ".";
+}
+function updateHomeNote(){
+  var st = activeSt();
+  $("homeNote").textContent = "Station active : " + (st.name || "") + ". " + posText(st);
+}
+function renderStationBar(){
+  var sel = $("fStation"), l = stations(), a = activeSt();
+  sel.innerHTML = l.map(function(st){ return '<option value="' + esc(st.id) + '"' + (st.id === a.id ? " selected" : "") + '>' + esc(st.name || "Station") + (st.qth ? " – " + esc(st.qth) : "") + '</option>'; }).join("");
+  $("btnHere").hidden = a.kind !== "mobile";
+  var p = stPos(a);
+  $("stInfo").textContent = p ? p.label + ", " + (p.zone.approx ? "≈ " : "") + fmtOff(nowIn(p.zone).off) : "lieu à préciser";
+}
+function renderStEditor(){
+  $("stList").innerHTML = STW.map(function(st, i){
+    var f = function(k, lab, ph, cls){ return '<div class="fld"><label>' + lab + '</label><input data-i="' + i + '" data-k="' + k + '" value="' + esc(st[k] || "") + '" placeholder="' + esc(ph || "") + '"' + (cls ? ' class="' + cls + '"' : "") + ' autocomplete="off"></div>'; };
+    return '<fieldset class="stcard"><legend>' + esc(st.name || "Station") + (st.id === S.settings.active ? " (active)" : "") + '</legend>' +
+      '<div class="row">' + f("name", "Nom", "Fixe, Mobile, Portable…") +
+        '<div class="fld"><label>Type</label><select data-i="' + i + '" data-k="kind"><option value="fixe"' + (st.kind !== "mobile" ? " selected" : "") + '>Fixe</option><option value="mobile"' + (st.kind === "mobile" ? " selected" : "") + '>Mobile ou portable</option></select></div></div>' +
+      '<div class="row">' + f("call", "Indicatif utilisé", "14 XX 000", "mono-in") + f("pwr", "Puissance", "100 W") + '</div>' +
+      '<div class="row">' + f("qth", "Ville", "Lyon") + f("loc", "ou locator (plus précis)", "JN25dt", "mono-in") + '</div>' +
+      '<div class="row"><div class="fld"><label>Fuseau horaire</label><select data-i="' + i + '" data-k="tz">' + TZ_CHOICES.map(function(c){ return '<option value="' + c[0] + '"' + ((st.tz || "") === c[0] ? " selected" : "") + '>' + c[1] + '</option>'; }).join("") + '</select></div>' +
+        '<div class="fld" style="align-self:end"><button class="btn gpsbtn" data-i="' + i + '" style="width:100%">Position GPS</button></div></div>' +
+      '<div class="row">' + f("rig", "Radio", "") + f("ant", "Antenne", "") + '</div>' +
+      '<div class="row">' + f("mic", "Micro", "") + '<div class="fld" style="align-self:end">' + (STW.length > 1 ? '<button class="btn danger delst" data-i="' + i + '" style="width:100%">Supprimer cette station</button>' : "") + '</div></div>' +
+      '<p class="note-small" id="stpos' + i + '">' + esc(posText(st)) + '</p></fieldset>';
+  }).join("");
+}
+function nearestTown(lat, lon){
+  var best = null, bd = 1e9;
+  PLACES.forEach(function(p){ if (p.kind !== "ville") return; var d = distBrg({lat:lat, lon:lon}, p).d; if (d < bd) { bd = d; best = p; } });
+  return best && bd < 25 ? (best.label || titleCase(best.k)) : "";
+}
+function gpsTo(st, done){
+  if (!navigator.geolocation) { toast("Géolocalisation indisponible sur cet appareil"); return; }
+  toast("Recherche de la position…");
+  navigator.geolocation.getCurrentPosition(function(p){
+    st.loc = llToLoc(p.coords.latitude, p.coords.longitude);
+    st.qth = nearestTown(p.coords.latitude, p.coords.longitude);
+    done();
+    toast("Position : " + (st.qth ? st.qth + ", " : "") + st.loc);
+  }, function(){ toast("Position refusée ou indisponible : saisis la ville"); }, {timeout:12000, maximumAge:60000});
+}
+function saveSettingsCloud(){ write("settings", S.settings, true); }
+function toggleSettings(force){
+  var s = $("settings"), open = force !== undefined ? force : s.hidden;
+  s.hidden = !open; $("btnSettings").setAttribute("aria-expanded", String(open));
+  if (open) {
+    window.scrollTo(0, 0);
+    STW = JSON.parse(JSON.stringify(stations()));
+    renderStEditor();
+    $("btnWipe").dataset.armed = ""; $("btnWipe").textContent = "Effacer tout le carnet";
+    updateHomeNote();
+  }
+}
+function switchStation(id){
+  var oldZ = formZone(), keep = !editId && tonSet && F.fDate.value && F.fTime.value;
+  var utc = keep ? localToUtc(F.fDate.value.replace(/-/g, ""), F.fTime.value.replace(":", ""), oldZ) : null;
+  S.settings.active = id;
+  saveSettingsCloud();
+  refresh(); applySettingsUI();
+  F.fPwr.value = activeSt().pwr || F.fPwr.value;
+  if (utc) { var l = utcToLocal(utc.date, utc.time, formZone()); F.fDate.value = l.date.slice(0,4) + "-" + l.date.slice(4,6) + "-" + l.date.slice(6,8); F.fTime.value = fTime(l.time); }
+  updateTon(); tick();
+  toast("Station : " + (activeSt().name || ""));
+}
+function setTimeMode(m){
+  var oldZ = formZone(), keep = F.fDate.value && F.fTime.value;
+  var utc = keep ? localToUtc(F.fDate.value.replace(/-/g, ""), F.fTime.value.replace(":", ""), oldZ) : null;
+  S.ui.timeMode = m; saveLocal();
+  if (editId) editZone = zoneOfQ(S.qsos[editId] || {});
+  if (utc) { var l = utcToLocal(utc.date, utc.time, formZone()); F.fDate.value = l.date.slice(0,4) + "-" + l.date.slice(4,6) + "-" + l.date.slice(6,8); F.fTime.value = fTime(l.time); }
+  $("btnTimeMode").textContent = m === "utc" ? "UTC" : "Heure locale";
+  updateTon(); renderLog(); renderStation();
+}
+function fixCandidates(){ return SORTED.filter(function(q){ return q.src === "access" && !q.tzfix && q.date; }); }
+function fixStation(){ var l = stations(); for (var i = 0; i < l.length; i++) if (l[i].kind !== "mobile" && stPos(l[i])) return l[i]; return activeSt(); }
+function renderFixBox(){
+  var n = fixCandidates().length, box = $("fixBox");
+  if (!n) { box.hidden = true; return; }
+  var st = fixStation(), p = stPos(st);
+  box.hidden = false;
+  box.innerHTML = '<p><b>' + n + ' fiches importées d\u2019Access</b> sont encore à l\u2019heure locale saisie dans ta base, alors que le carnet compte en UTC. Elles s\u2019affichent donc décalées.</p>' +
+    '<button class="btn primary" id="btnFix">Convertir depuis l\u2019heure de ' + esc(p ? p.label : (st.name || "ma station")) + '</button>';
+  $("btnFix").addEventListener("click", fixAccessTimes);
+}
+function fixAccessTimes(){
+  var st = fixStation(), z = stZone(st), groups = {}, dels = {}, n = 0;
+  fixCandidates().forEach(function(q){
+    var c = localToUtc(q.date, q.ton || "0000", z), id = q.id;
+    var nq = stripTmp(q, false);
+    nq.date = c.date; nq.ton = c.time; nq.toff = c.time; nq.tzfix = 1; if (z.tz) nq.tz = z.tz; else nq.tzoff = z.off;
+    var dk = docKeyFor(c.date, q.dk);
+    if (q.dk && q.dk !== dk) (dels[q.dk] = dels[q.dk] || {})[id] = null;
+    (groups[dk] = groups[dk] || {})[id] = nq;
+    S.qsos[id] = Object.assign({dk:dk}, nq);
+    n++;
+  });
+  Object.keys(dels).forEach(function(dk){ write(dk, dels[dk]); });
+  Object.keys(groups).forEach(function(dk){ write(dk, groups[dk]); });
+  saveLocal(); refresh();
+  toast(n + " heures converties en UTC");
+}
+function wipeAll(){
+  var b = $("btnWipe");
+  if (b.dataset.armed !== "1") { b.dataset.armed = "1"; b.textContent = "Confirmer : tout effacer"; return; }
+  var keys = {};
+  Object.keys(S.qsos).forEach(function(id){ if (S.qsos[id].dk) keys[S.qsos[id].dk] = 1; });
+  if (cloudDocs) Object.keys(cloudDocs).forEach(function(k){ if (k.indexOf("m_") === 0 || k === "ops") keys[k] = 1; });
+  keys.ops = 1;
+  pend = []; S.qsos = {}; S.ops = {};
+  if (cloud) Object.keys(keys).forEach(function(k){
+    chains[k] = (chains[k] || Promise.resolve()).then(function(){ return cloud.col.doc(k).delete(); }).catch(function(){});
+  });
+  saveLocal(); refresh(); clearForm(); toggleSettings(false);
+  toast("Carnet effacé");
+}
+
+/* ---------- Événements ---------- */
+function upperInput(el){ el.addEventListener("input", function(){ var s = this.selectionStart, e = this.selectionEnd, u = this.value.toUpperCase(); if (u !== this.value) { this.value = u; try { this.setSelectionRange(s, e); } catch (x) {} } }); }
+upperInput(F.fCall); upperInput(F.fCall2); upperInput($("sCall"));
+F.fCall.addEventListener("input", onCallInput);
+F.fFreq.addEventListener("input", function(){ updateBand(); $("fldFreq").classList.remove("err"); if (!rstTouched) resetRst(); renderStation(); });
+F.fMode.addEventListener("change", function(){ if (!rstTouched) resetRst(); renderStation(); });
+F.fRs.addEventListener("input", function(){ rstTouched = true; });
+F.fRr.addEventListener("input", function(){ rstTouched = true; });
+AUTO_FIELDS.forEach(function(p){ F[p[0]].addEventListener("input", function(){ this.classList.remove("auto"); if (/fLoc|fPays|fQth/.test(p[0])) renderStation(); }); });
+F.fName.addEventListener("change", renderStation);
+F.fTime.addEventListener("input", function(){ tonSet = true; updateTon(); });
+$("tonBtn").addEventListener("click", function(){ fillNow(); tonSet = true; updateTon(); toast("Début remis à maintenant"); });
+$("segQso").addEventListener("click", function(){ setSwl(false); });
+$("segSwl").addEventListener("click", function(){ setSwl(true); });
+$("btnLog").addEventListener("click", doLog);
+$("btnClear").addEventListener("click", function(){ clearForm(); F.fCall.focus(); });
+$("btnDel").addEventListener("click", doDelete);
+document.querySelector(".entry").addEventListener("keydown", function(e){
+  if (e.isComposing) return;
+  if (e.key === "Enter" && e.target.tagName !== "TEXTAREA" && e.target.tagName !== "BUTTON" && e.target.tagName !== "SUMMARY") { e.preventDefault(); doLog(); }
+  else if (e.key === "Escape" && $("videoSheet").hidden) { e.preventDefault(); clearForm(); F.fCall.focus(); }
+});
+document.addEventListener("click", function(e){
+  var b = e.target.closest("[data-id]");
+  if (b && (b.closest("#logList") || b.closest("#mapPick") || b.closest("#mapInfo"))) loadForEdit(b.getAttribute("data-id"));
+});
+var searchT = null;
+$("logSearch").addEventListener("input", function(){ clearTimeout(searchT); searchT = setTimeout(renderLog, 120); });
+$("tabLog").addEventListener("click", function(){ showTab("log"); saveLocal(); });
+$("tabMap").addEventListener("click", function(){ showTab("map"); saveLocal(); });
+$("mapEurope").addEventListener("click", function(){ if (chart) chart.setOption({geo:{center:[HOME ? HOME.lon : 4, HOME ? HOME.lat + 3 : 50], zoom:4.2}}); });
+$("mapWorld").addEventListener("click", function(){ if (chart) chart.setOption({geo:{center:[10, 20], zoom:1}}); });
+$("mapFrance").addEventListener("click", function(){ if (chart) chart.setOption({geo:{center:[2.5, 46.6], zoom:11}}); });
+$("btnAdif").addEventListener("click", function(){
+  if (!SORTED.length) { toast("Journal vide"); return; }
+  saveFile("carnet-" + stamp() + ".adi", adifAll(), "text/plain", "carnet-" + stamp() + "-adif.txt");
+});
+$("btnCsv").addEventListener("click", function(){ if (!SORTED.length) { toast("Journal vide"); return; } saveFile("carnet-" + stamp() + ".csv", csvAll(), "text/csv"); });
+$("btnCopy").addEventListener("click", function(){ if (!SORTED.length) { toast("Journal vide"); return; } copyText(adifAll(), "ADIF copié"); });
+$("fileImport").addEventListener("change", function(){
+  var file = this.files && this.files[0]; if (!file) return;
+  var rd = new FileReader(), isAcc = /\.(accdb|mdb)$/i.test(file.name);
+  rd.onload = function(){ if (isAcc) importAccess(rd.result, file.name); else importAdif(String(rd.result || "")); };
+  rd.onerror = function(){ toast("Lecture du fichier impossible"); };
+  if (isAcc) rd.readAsArrayBuffer(file); else rd.readAsText(file);
+  this.value = "";
+});
+$("importPick").addEventListener("click", function(e){
+  var b = e.target.closest("[data-t]"); if (!b) return;
+  var t = b.getAttribute("data-t");
+  $("importPick").hidden = true;
+  if (t !== "cancel" && ACCESS_TABLES) addImported(accessToQsos(ACCESS_TABLES[+t]), "« " + ACCESS_TABLES[+t].name + " »");
+  ACCESS_TABLES = null;
+});
+$("btnSettings").addEventListener("click", function(){ toggleSettings(); });
+$("stList").addEventListener("input", function(e){
+  var el = e.target, i = el.getAttribute("data-i"), k = el.getAttribute("data-k");
+  if (i === null || !k) return;
+  var v = el.value;
+  if (k === "call" || k === "loc") { var ss = el.selectionStart; v = v.toUpperCase(); if (v !== el.value) { el.value = v; try { el.setSelectionRange(ss, ss); } catch (x) {} } }
+  STW[+i][k] = v;
+  var pe = $("stpos" + i); if (pe) pe.textContent = posText(STW[+i]);
+});
+$("stList").addEventListener("change", function(e){
+  var el = e.target, i = el.getAttribute("data-i"), k = el.getAttribute("data-k");
+  if (i === null || !k || el.tagName !== "SELECT") return;
+  STW[+i][k] = el.value;
+  var pe = $("stpos" + i); if (pe) pe.textContent = posText(STW[+i]);
+});
+$("stList").addEventListener("click", function(e){
+  var g = e.target.closest(".gpsbtn"), d = e.target.closest(".delst");
+  if (g) { var i = +g.getAttribute("data-i"); gpsTo(STW[i], renderStEditor); }
+  if (d) { STW.splice(+d.getAttribute("data-i"), 1); renderStEditor(); }
+});
+$("btnAddSt").addEventListener("click", function(){
+  STW.push({id:"st" + Date.now().toString(36), name:"Station " + (STW.length + 1), kind:"mobile", call:$("sCall").value.trim().toUpperCase(), qth:"", loc:"", tz:"", rig:"", ant:"", mic:"", pwr:""});
+  renderStEditor();
+});
+$("btnSaveSettings").addEventListener("click", function(){
+  for (var i = 0; i < STW.length; i++) {
+    var lc = (STW[i].loc || "").trim();
+    if (lc && !LOC_RE.test(lc.toUpperCase())) { toast("Locator invalide pour « " + (STW[i].name || "station") + " » (ex. JN25dt)"); return; }
+    STW[i].loc = lc ? fmtLoc(lc) : "";
+    STW[i].name = (STW[i].name || "").trim() || "Station " + (i + 1);
+  }
+  S.settings.stations = JSON.parse(JSON.stringify(STW));
+  if (!S.settings.stations.some(function(st){ return st.id === S.settings.active; })) S.settings.active = S.settings.stations[0].id;
+  S.settings.mycall = $("sCall").value.trim().toUpperCase();
+  saveSettingsCloud();
+  toggleSettings(false); refresh(); applySettingsUI();
+  if (!F.fPwr.value) F.fPwr.value = activeSt().pwr || "";
+  toast("Réglages enregistrés");
+});
+$("sTheme").addEventListener("change", function(){ S.ui.theme = this.value; saveLocal(); applyTheme(); });
+$("btnTheme").addEventListener("click", cycleTheme);
+$("btnCloseSettings").addEventListener("click", function(){ toggleSettings(false); });
+/* menu Fichier */
+function closeMenu(){ $("fileMenu").hidden = true; $("btnFile").setAttribute("aria-expanded", "false"); }
+$("btnFile").addEventListener("click", function(e){
+  e.stopPropagation();
+  var open = $("fileMenu").hidden;
+  $("fileMenu").hidden = !open; this.setAttribute("aria-expanded", String(open));
+  if (open) { var f = $("fileMenu").querySelector("[role=menuitem]"); if (f) f.focus(); }
+});
+$("fileMenu").addEventListener("click", function(e){ if (e.target.closest("[role=menuitem]")) setTimeout(closeMenu, 0); });
+$("fileMenu").addEventListener("keydown", function(e){
+  var items = Array.prototype.slice.call(this.querySelectorAll("[role=menuitem]")), i = items.indexOf(document.activeElement);
+  if (e.key === "ArrowDown") { e.preventDefault(); items[(i + 1) % items.length].focus(); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); items[(i - 1 + items.length) % items.length].focus(); }
+  else if (e.key === "Escape") { closeMenu(); $("btnFile").focus(); }
+  else if ((e.key === "Enter" || e.key === " ") && document.activeElement.tagName === "LABEL") { e.preventDefault(); document.activeElement.click(); }
+});
+document.addEventListener("click", function(e){ if (!e.target.closest(".menuwrap")) closeMenu(); });
+$("btnBackup").addEventListener("click", doBackup);
+$("fileRestore").addEventListener("change", function(){
+  var file = this.files && this.files[0]; if (!file) return;
+  var rd = new FileReader();
+  rd.onload = function(){ restoreBackup(String(rd.result || "")); };
+  rd.readAsText(file); this.value = "";
+});
+document.addEventListener("keydown", function(e){
+  if ((e.ctrlKey || e.metaKey) && !e.altKey && (e.key === "s" || e.key === "S")) { e.preventDefault(); doBackup(); }
+});
+/* navigation mobile */
+Array.prototype.forEach.call(document.querySelectorAll(".bottomnav button"), function(b){
+  b.addEventListener("click", function(){ setView(this.getAttribute("data-view")); });
+});
+$("fStation").addEventListener("change", function(){ switchStation(this.value); });
+$("btnHere").addEventListener("click", function(){ var st = activeSt(); gpsTo(st, function(){ saveSettingsCloud(); refresh(); applySettingsUI(); updateTon(); }); });
+$("btnTimeMode").addEventListener("click", function(){ setTimeMode(S.ui.timeMode === "utc" ? "local" : "utc"); });
+if (window.matchMedia) { var mq = window.matchMedia("(prefers-color-scheme: dark)"); if (mq.addEventListener) mq.addEventListener("change", function(){ if (chart) renderMap(false); }); }
+$("btnWipe").addEventListener("click", wipeAll);
+$("btnInstall").addEventListener("click", openInstall);
+$("instClose").addEventListener("click", function(){ $("installSheet").hidden = true; });
+$("installSheet").addEventListener("keydown", function(e){ if (e.key === "Escape") $("installSheet").hidden = true; });
+$("btnVideo").addEventListener("click", openVideo);
+$("vidClose").addEventListener("click", function(){ closeVideo(false); });
+$("vidRec").addEventListener("click", recToggle);
+$("vidFlip").addEventListener("click", function(){ VID.facing = VID.facing === "user" ? "environment" : "user"; $("vidNative").setAttribute("capture", VID.facing); startCam(); });
+$("vidRetake").addEventListener("click", function(){ vidReset(); if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia && vidMime() !== null) startCam(); else { vidState("error"); vidMsg("Utilise « Filmer avec l\u2019appareil photo »."); $("vidNativeLbl").hidden = false; } });
+$("vidSave").addEventListener("click", vidSave);
+$("vidNative").addEventListener("change", function(){
+  var f = this.files && this.files[0]; if (!f) return;
+  if (VID.rec && VID.rec.state === "recording") return;
+  stopStream(); setBlob(f); this.value = "";
+});
+$("vidDetach").addEventListener("click", function(){ curVideo = ""; showAttach(); });
+$("videoSheet").addEventListener("keydown", function(e){ if (e.key === "Escape") { e.stopPropagation(); closeVideo(false); } });
+
+function tick(){
+  var u = new Date().toISOString().slice(11,19);
+  var z = stZone(activeSt()), l = nowIn(z);
+  $("clockLoc").innerHTML = '<small>' + esc(HOME && HOME.label ? HOME.label : "Local") + '</small>' + fTime(l.time);
+  $("clockUtc").innerHTML = '<small>UTC</small>' + u.slice(0,5);
+  updateCorrTime();
+}
+
+/* ---------- Démarrage ---------- */
+function refresh(){ rebuildIndex(); renderStats(); renderLog(); renderStation(); renderMap(false); updateHomeNote(); renderFixBox(); renderStationBar(); renderBackupBox(); }
+loadLocal();
+pend.forEach(function(p){ p.busy = false; });
+ensureMode(S.ui.mode);
+F.fMode.value = S.ui.mode || "";
+F.fFreq.value = S.ui.freq || "";
+applySettingsUI();
+setSwl(S.ui.swl);
+resetRst(); updateBand();
+stations();
+F.fPwr.value = activeSt().pwr || "";
+$("btnTimeMode").textContent = S.ui.timeMode === "utc" ? "UTC" : "Heure locale";
+refresh();
+updateTon();
+showTab(S.ui.tab === "map" ? "map" : "log");
+tick(); setInterval(tick, 1000);
+if (!HOME) toggleSettings(true); else if (!isNarrow()) F.fCall.focus();
+initCloud();
+initPwa();
+
+})();
+</script>
+</body>
+</html>
