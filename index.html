@@ -432,7 +432,7 @@ body{overflow-x:hidden}
 .ta{background:var(--sa)} .tb{background:var(--sb)}
 body.swl .entry{display:flex;flex-direction:column}
 body.swl .entry > *{order:20}
-body.swl .entry-head{order:1} body.swl .stationbar{order:2} body.swl .o-intro{order:3} body.swl .o-freq{order:4}
+body.swl .entry-head{order:1} body.swl .stationbar{order:2} body.swl .o-intro{order:3} body.swl .o-band{order:4} body.swl .o-freq{order:4}
 body.swl .o-call{order:5} body.swl .o-sig{order:6} body.swl .o-gt{order:7} body.swl .o-r1{order:8} body.swl .o-r2{order:9} body.swl .o-his{order:10}
 body.swl .o-B{order:11} body.swl .o-note{order:12} body.swl .o-more{order:13} body.swl .attach{order:14} body.swl .entry .actions{order:15}
 body.swl .sideA:not(.display){border-left:4px solid var(--sa);padding-left:10px;margin-left:0}
@@ -453,6 +453,18 @@ body.swl .o-his{margin-top:8px}
 .qrow .c .c2{font-family:var(--mono);color:var(--sb);font-weight:700;font-size:.85rem;margin-left:4px}
 .st2{display:flex;gap:10px;align-items:flex-start;background:var(--sb-soft);border-radius:10px;padding:8px 10px;margin:-2px 0 12px;font-size:.9rem}
 .st2 span{color:var(--muted);font-size:.82rem}
+.bandhint{font-size:.76rem;color:var(--muted);margin:4px 2px 0;min-height:1em}
+.bandhint.warn{color:var(--warn);font-weight:600}
+.qslbox{width:min(980px,100%)}
+.qslprev{background:var(--sunk);padding:12px;border-bottom:1px solid var(--line)}
+.qslprev canvas{display:block;width:100%;height:auto;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.25);background:#222}
+.qslform{padding:12px 14px 14px}
+.tpls{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px}
+.tplbtn{border:1.5px solid var(--line);background:var(--sunk);border-radius:20px;padding:7px 14px;font-weight:600;cursor:pointer;min-height:40px}
+.tplbtn.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+#qslPhotoLbl{margin-bottom:10px}
+.qslgo{margin-left:auto}
+@media (max-width:640px){.qslprev{padding:8px}.qslform .actions{flex-wrap:wrap}.qslform .actions .btn{flex:1 1 auto}}
 </style>
 </head>
 <body data-view="entry">
@@ -534,9 +546,12 @@ body.swl .o-his{margin-top:8px}
           <div class="flagline" id="flagline" aria-live="polite"></div>
         </div>
 
+        <div class="row o-band">
+          <div class="fld full"><label for="fBandSel">Bande</label><select id="fBandSel"></select></div>
+        </div>
         <div class="row r3 o-freq">
           <div class="fld" id="fldFreq"><label for="fFreq">Fréquence (MHz)</label>
-            <div class="freqwrap"><input id="fFreq" class="mono-in" inputmode="decimal" autocomplete="off" enterkeyhint="send" placeholder="27,555"><span class="band" id="bandTag" hidden></span></div></div>
+            <div class="freqwrap"><input id="fFreq" class="mono-in" inputmode="decimal" autocomplete="off" enterkeyhint="send" placeholder="27,555"><span class="band" id="bandTag" hidden></span></div><p class="bandhint" id="bandHint"></p></div>
           <div class="fld"><label for="fMode">Mode</label><select id="fMode"></select></div>
         </div>
         <div class="row o-sig sideA">
@@ -719,6 +734,32 @@ body.swl .o-his{margin-top:8px}
     </div>
     <p class="vidnote vidmarks" id="vidMarks" hidden></p>
     <p class="vidnote" id="vidNote">La vidéo reste sur ton appareil : rien n’est envoyé en ligne.</p>
+  </div>
+</div>
+<div class="sheet" id="qslSheet" role="dialog" aria-modal="true" aria-labelledby="qslTitle" hidden>
+  <div class="sheet-box qslbox">
+    <div class="sheet-head">
+      <h2 id="qslTitle">QSL</h2>
+      <button class="icon-btn" id="qslClose" aria-label="Fermer"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <div class="qslprev"><canvas id="qslCanvas" width="1400" height="900" aria-label="Aperçu de la carte QSL"></canvas></div>
+    <div class="qslform">
+      <div class="tpls" id="qslTpls" role="group" aria-label="Modèle de carte"></div>
+      <label class="btn small" id="qslPhotoLbl" for="qslPhoto" hidden>Choisir une photo dans mes dossiers</label>
+      <input type="file" id="qslPhoto" accept="image/*" class="sr" tabindex="-1">
+      <div class="row" id="qslCapRow" hidden><div class="fld full"><label for="qslCap">Légende de la photo</label><input id="qslCap" autocomplete="off" placeholder="Monts du Lyonnais"></div></div>
+      <div class="row">
+        <div class="fld"><label for="qslTo">E-mail du destinataire</label><input id="qslTo" type="email" autocomplete="off" placeholder="adresse@exemple.fr"></div>
+        <div class="fld"><label for="qslOp">Ton prénom (signature)</label><input id="qslOp" autocomplete="off"></div>
+      </div>
+      <div class="row"><div class="fld full"><label for="qslMsg">Message</label><input id="qslMsg" autocomplete="off"></div></div>
+      <p class="note-small" id="qslInfo"></p>
+      <div class="actions">
+        <button class="btn primary" id="qslSendBtn">Envoyer la QSL par e-mail</button>
+        <button class="btn" id="qslMailBtn">Ouvrir mon mail</button>
+        <button class="btn" id="qslSaveBtn">Enregistrer l’image</button>
+      </div>
+    </div>
   </div>
 </div>
 <div class="sheet" id="installSheet" role="dialog" aria-modal="true" aria-labelledby="instTitle" hidden>
@@ -2106,7 +2147,8 @@ function renderStation(){
     h += '<div class="links"><a href="https://www.qrz.com/db/' + encodeURIComponent(base) + '" target="_blank" rel="noopener">Fiche QRZ.com</a>' +
       '<a href="https://www.hamqth.com/' + encodeURIComponent(base) + '" target="_blank" rel="noopener">Fiche HamQTH</a></div>';
   }
-  if (g) h += '<div class="links"><button class="linkbtn" id="seeOnMap">Voir sur la carte</button></div>';
+  var qslBtn = editId && S.qsos[editId] ? '<button class="btn small qslgo" id="btnQsl">✉ ' + (S.qsos[editId].qsls === "Y" ? "Renvoyer la QSL" : "Envoyer une QSL") + '</button>' : "";
+  if (g || qslBtn) h += '<div class="links">' + (g ? '<button class="linkbtn" id="seeOnMap">Voir sur la carte</button>' : "") + qslBtn + '</div>';
 
   var active = document.activeElement && document.activeElement.id === "opNote";
   if (active) return;
@@ -2121,6 +2163,7 @@ function renderStation(){
     clearTimeout(noteT);
     noteT = setTimeout(function(){ var o = {}; o[k] = v.trim() ? v : null; write("ops", o); }, 900);
   });
+  var bq = $("btnQsl"); if (bq) bq.addEventListener("click", function(){ openQsl(editId); });
   var sm = $("seeOnMap");
   if (sm) sm.addEventListener("click", function(){ if (editId) SEL = editId; SEL_FOCUS = true; if (isNarrow()) setView("map"); else showTab("map"); if (!SEL || !S.qsos[SEL]) focusMap(g); else ensureMap().then(function(){ renderMap(false); }); });
 }
@@ -2145,7 +2188,7 @@ function renderLog(){
     var extra = [place, q.name, q.swl && q.call2 ? "② " + [q.name2, q.pays2].filter(Boolean).join(", ") : "", q.st && stations().length > 1 ? "depuis " + q.st : "", q.note].filter(Boolean).join(" – ");
     return '<button class="qrow' + (q.id === editId || q.id === SEL ? " sel" : "") + '" data-id="' + esc(q.id) + '">' +
       '<span class="t">' + (function(){ var lq = qLocal(q); return fDate(lq.date, true) + "<br>" + fTime(lq.time); })() + '</span>' +
-      '<span class="c">' + esc(q.call) + (q.swl && q.call2 ? '<small class="c2"> ⇄ ' + esc(q.call2) + '</small>' : "") + (q.swl ? '<span class="tag-swl">écoute</span>' : "") + (q.video ? '<span class="tag-vid" title="' + esc(q.video) + '">vidéo</span>' : "") + '</span>' +
+      '<span class="c">' + esc(q.call) + (q.swl && q.call2 ? '<small class="c2"> ⇄ ' + esc(q.call2) + '</small>' : "") + (q.swl ? '<span class="tag-swl">écoute</span>' : "") + (q.video ? '<span class="tag-vid" title="' + esc(q.video) + '">vidéo</span>' : "") + (q.qsls === "Y" ? '<span class="tag-vid" title="QSL envoyée le ' + fDate(q.qslsd) + '">QSL</span>' : "") + '</span>' +
       '<span class="m"><span class="bd">' + esc(q.band || "?") + '</span> ' + esc(q.mode || "") + "<br>" + esc(q.swl ? [q.rr, q.rr2].filter(Boolean).join(" | ") : [q.rs, q.rr].filter(Boolean).join(" / ")) + '</span>' +
       '<span class="x">' + esc(extra) + '</span>' +
       '<span class="dk">' + (q._d ? (q._g.prec === "pays" || q._g.prec === "région" ? "≈ " : "") + km(q._d.d) : "") + '</span></button>';
@@ -2516,8 +2559,9 @@ function renderSelBar(){
   bar.innerHTML = '<span class="dot"></span><div class="mstxt"><b class="mono">' + esc(q.call) + '</b> ' + fDate(lq.date, true) + " " + fTime(lq.time) +
     (q._d ? " – <b>" + km(q._d.d) + "</b>" : "") + (q._g ? "" : " – position inconnue") +
     '<br><span>Ma station : ' + esc((q.st ? q.st + ", " : "") + me) + '</span></div>' +
-    '<button class="btn small" id="selFocus">Recentrer</button><button class="btn small" id="selClear">Désélectionner</button>';
+    '<button class="btn small" id="selQsl">✉ QSL</button><button class="btn small" id="selFocus">Recentrer</button><button class="btn small" id="selClear">Désélectionner</button>';
   $("selFocus").addEventListener("click", focusSel);
+  $("selQsl").addEventListener("click", function(){ openQsl(SEL); });
   $("selClear").addEventListener("click", function(){ SEL = null; renderSelBar(); renderMap(false); renderLog(); });
 }
 function blinkTick(){
@@ -2622,7 +2666,7 @@ function adifAll(){
       af("BAND", ADIF_BANDS[q.band] || "") + af("FREQ", q.freq ? String(+(+q.freq).toFixed(6)) : "") + af("MODE", am.mode) + af("SUBMODE", am.sub) +
       af("RST_SENT", q.rs) + af("RST_RCVD", q.rr) + af("NAME", q.name) + af("QTH", q.qth) + af("COUNTRY", q._c ? q._c.name : q.pays) + af("GRIDSQUARE", (q.loc || "").slice(0, 8)) + af("GRIDSQUARE_EXT", (q.loc || "").slice(8, 10)) +
       af("RIG", q.rig) + af("RX_PWR", q.opwr) + af("EMAIL", q.email) + af("SRX_STRING", q.contest) + af("COMMENT", comment) +
-      af("TX_PWR", q.pwr) + af("STATION_CALLSIGN", q.mycall) + af("MY_GRIDSQUARE", (q.myloc || "").slice(0, 8)) + af("MY_GRIDSQUARE_EXT", (q.myloc || "").slice(8, 10)) + af("MY_CITY", q.myqth) + af("MY_RIG", q.myrig) + af("MY_ANTENNA", q.myant) + (q.swl ? af("SWL", "Y") : "") + "<EOR>\n";
+      af("TX_PWR", q.pwr) + af("STATION_CALLSIGN", q.mycall) + af("MY_GRIDSQUARE", (q.myloc || "").slice(0, 8)) + af("MY_GRIDSQUARE_EXT", (q.myloc || "").slice(8, 10)) + af("MY_CITY", q.myqth) + af("MY_RIG", q.myrig) + af("MY_ANTENNA", q.myant) + (q.swl ? af("SWL", "Y") : "") + (q.qsls === "Y" ? af("QSL_SENT", "Y") + af("QSL_SDATE", q.qslsd) + af("QSL_SENT_VIA", q.qslsv || "E") : "") + "<EOR>\n";
   });
   return out;
 }
@@ -3261,6 +3305,378 @@ function initPwa(){
   if (v) setView(v === "saisie" ? "entry" : v === "journal" ? "log" : "map");
 }
 
+/* ---------- Bandes : début et fin (IARU Région 1, Europe) ---------- */
+var BAND_INFO = [
+  ["2200m","2200 m",0.1357,0.1378],["630m","630 m",0.472,0.479],["160m","160 m",1.81,2.0],["80m","80 m",3.5,3.8],["60m","60 m",5.3515,5.3665],
+  ["40m","40 m",7.0,7.2],["30m","30 m",10.1,10.15],["20m","20 m",14.0,14.35],["17m","17 m",18.068,18.168],["15m","15 m",21.0,21.45],
+  ["12m","12 m",24.89,24.99],["11m","11 m CB",26.965,27.405],["10m","10 m",28.0,29.7],["8m","8 m (selon pays)",40.66,40.7],["6m","6 m",50.0,52.0],
+  ["4m","4 m (selon pays)",70.0,70.5],["2m","2 m",144.0,146.0],["70cm","70 cm",430.0,440.0],["23cm","23 cm",1240,1300],["13cm","13 cm",2300,2450],
+  ["9cm","9 cm",3400,3410],["6cm","6 cm",5650,5850],["3cm","3 cm",10000,10500],["1.25cm","1,25 cm",24000,24250],["6mm","6 mm",47000,47200],
+  ["4mm","4 mm",76000,81000],["2.5mm","2,5 mm",122250,123000],["2mm","2 mm",134000,141000],["1mm","1 mm",241000,250000]
+];
+function bandInfo(id){ for (var i = 0; i < BAND_INFO.length; i++) if (BAND_INFO[i][0] === id) return BAND_INFO[i]; return null; }
+function frNum(n, dec){ return n.toFixed(dec).replace(".", ","); }
+function decOf(a, b){ var s = String(a) + " " + String(b), m = s.match(/\.(\d+)/g) || []; var d = 0; m.forEach(function(x){ d = Math.max(d, x.length - 1); }); return d; }
+function bandRange(b){
+  if (!b) return "";
+  var lo = b[2], hi = b[3];
+  if (hi < 1) return frNum(lo * 1000, lo * 1000 % 1 ? 1 : 0) + " – " + frNum(hi * 1000, hi * 1000 % 1 ? 1 : 0) + " kHz";
+  if (lo >= 3000) { var a = lo / 1000, z = hi / 1000; var d = Math.max(decOf(a, z), 1); return frNum(a, d) + " – " + frNum(z, d) + " GHz"; }
+  if (lo >= 1000) return String(lo).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f") + " – " + String(hi).replace(/\B(?=(\d{3})+(?!\d))/g, "\u202f") + " MHz";
+  var d2 = lo >= 100 ? 0 : Math.max(3, decOf(lo, hi));
+  return frNum(lo, d2) + " – " + frNum(hi, d2) + " MHz";
+}
+function bandLabel(id){ var b = bandInfo(id); return b ? b[1] + " : " + bandRange(b) : id; }
+function fillBandSelect(){
+  var sel = $("fBandSel"); if (!sel) return;
+  sel.innerHTML = '<option value="">Choisir une bande…</option>' + BAND_INFO.map(function(b){ return '<option value="' + b[0] + '">' + esc(b[1] + " : " + bandRange(b)) + '</option>'; }).join("");
+}
+function syncBandSelect(){
+  var sel = $("fBandSel"); if (!sel) return;
+  var b = curBand(), info = bandInfo(b);
+  sel.value = info ? b : "";
+  var f = parseFreq(F.fFreq.value), hint = $("bandHint");
+  if (!hint) return;
+  if (info && f && (f < info[2] || f > info[3])) { hint.textContent = "Hors de la bande autorisée " + bandRange(info) + (b === "11m" ? " (fréquences DX hors des 40 canaux)" : ""); hint.className = "bandhint warn"; }
+  else if (info) { hint.textContent = "Bande " + info[1] + " : " + bandRange(info); hint.className = "bandhint"; }
+  else hint.textContent = "";
+}
+
+/* ---------- QSL ---------- */
+var QSL_TPLS = [["fourviere","Fourvière au couchant","Lyon – Basilique de Fourvière"],["lumieres","Fête des Lumières","Lyon – Fête des Lumières"],
+  ["confluence","Confluence","Lyon – Confluence du Rhône et de la Saône"],["radio","Radio","Station radio"],["photo","Ma photo",""]];
+var QSL_PHOTO_LS = "carnet_qsl_photo";
+var QSL = {id:null, photo:null, W:1400, H:900};
+function qslCfg(){ var c = S.settings.qsl || {}; return {tpl:c.tpl || "fourviere", op:c.op || "", msg:c.msg || "Merci pour ce contact radio. 73 et à bientôt sur l\u2019air !", cap:c.cap}; }
+function qslSaveCfg(patch){ S.settings.qsl = Object.assign(qslCfg(), S.settings.qsl || {}, patch); saveSettingsCloud(); }
+function rndGen(seed){ var x = seed % 2147483647; if (x <= 0) x += 2147483646; return function(){ x = x * 16807 % 2147483647; return (x - 1) / 2147483646; }; }
+function lerp(a, b, t){ return a + (b - a) * t; }
+
+/* éléments de décor */
+function drawBasilica(c, cx, baseY, w, col, glow){
+  c.save();
+  if (glow) { c.shadowColor = glow; c.shadowBlur = w * 0.25; }
+  c.fillStyle = col;
+  var bh = w * 0.26;
+  c.fillRect(cx - w * 0.42, baseY - bh, w * 0.84, bh);
+  c.beginPath(); c.moveTo(cx - w * 0.36, baseY - bh); c.lineTo(cx, baseY - bh - w * 0.11); c.lineTo(cx + w * 0.36, baseY - bh); c.fill();
+  [-0.5, -0.31, 0.31, 0.5].forEach(function(o){
+    var tx = cx + o * w - w * 0.045, tw = w * 0.09, th = w * 0.5;
+    c.fillRect(tx, baseY - th, tw, th);
+    for (var k = 0; k < 3; k++) c.fillRect(tx + k * tw / 2.5, baseY - th - w * 0.03, tw / 4.5, w * 0.03);
+  });
+  c.fillRect(cx + w * 0.42, baseY - bh * 1.15, w * 0.1, bh * 1.15);
+  c.beginPath(); c.arc(cx + w * 0.47, baseY - bh * 1.15, w * 0.05, Math.PI, 0); c.fill();
+  c.fillRect(cx + w * 0.465, baseY - bh * 1.15 - w * 0.16, w * 0.012, w * 0.12);
+  c.beginPath(); c.arc(cx + w * 0.471, baseY - bh * 1.15 - w * 0.17, w * 0.013, 0, 7); c.fill();
+  c.restore();
+}
+function drawMetalTower(c, x, baseY, h, col){
+  c.save(); c.strokeStyle = col; c.fillStyle = col; c.lineWidth = Math.max(1.5, h * 0.012);
+  var bw = h * 0.2, tw = h * 0.03, top = baseY - h;
+  c.beginPath(); c.moveTo(x - bw / 2, baseY); c.lineTo(x - tw / 2, top); c.lineTo(x + tw / 2, top); c.lineTo(x + bw / 2, baseY); c.stroke();
+  for (var i = 0; i < 9; i++) {
+    var t0 = i / 9, t1 = (i + 1) / 9, y0 = lerp(baseY, top, t0), y1 = lerp(baseY, top, t1), w0 = lerp(bw, tw, t0) / 2, w1 = lerp(bw, tw, t1) / 2;
+    c.beginPath(); c.moveTo(x - w0, y0); c.lineTo(x + w1, y1); c.moveTo(x + w0, y0); c.lineTo(x - w1, y1); c.moveTo(x - w1, y1); c.lineTo(x + w1, y1); c.stroke();
+  }
+  c.fillRect(x - tw * 0.8, top - h * 0.05, tw * 1.6, h * 0.05);
+  c.beginPath(); c.moveTo(x, top - h * 0.05); c.lineTo(x, top - h * 0.16); c.stroke();
+  c.restore();
+}
+function drawFacades(c, x0, x1, baseY, hMax, col, win, seed, litP, roofs){
+  var r = rndGen(seed), x = x0;
+  while (x < x1) {
+    var w = 38 + r() * 60, h = hMax * (0.55 + r() * 0.45);
+    c.fillStyle = col; c.fillRect(x, baseY - h, w + 1, h + 400);
+    if (roofs !== false && r() > 0.35) { c.beginPath(); c.moveTo(x - 2, baseY - h); c.lineTo(x + w / 2, baseY - h - w * 0.28); c.lineTo(x + w + 2, baseY - h); c.fill(); }
+    var cols = Math.max(1, Math.floor(w / 15)), rows = Math.max(1, Math.floor(h / 22));
+    for (var i = 0; i < cols; i++) for (var j = 0; j < rows; j++) if (r() < litP) {
+      c.fillStyle = win; c.fillRect(x + 5 + i * (w - 8) / cols, baseY - h + 8 + j * 20, 5, 8);
+    }
+    x += w;
+  }
+}
+function drawRiver(c, W, y0, y1, stops, streak, seed){
+  var g = c.createLinearGradient(0, y0, 0, y1);
+  stops.forEach(function(s, i){ g.addColorStop(i / (stops.length - 1), s); });
+  c.fillStyle = g; c.fillRect(0, y0, W, y1 - y0);
+  var r = rndGen(seed || 7);
+  for (var i = 0; i < 70; i++) {
+    var y = lerp(y0 + 4, y1, r()), w = 20 + r() * 140;
+    c.fillStyle = typeof streak === "function" ? streak(r) : streak;
+    c.globalAlpha = 0.18 + r() * 0.4; c.fillRect(r() * W, y, w, 2 + r() * 2);
+  }
+  c.globalAlpha = 1;
+}
+function drawBridge(c, x0, x1, y, col, arches){
+  c.save(); c.strokeStyle = col; c.fillStyle = col; c.lineWidth = 6;
+  c.beginPath(); c.moveTo(x0, y); c.lineTo(x1, y); c.stroke();
+  var aw = (x1 - x0) / arches;
+  for (var i = 0; i < arches; i++) { c.beginPath(); c.lineWidth = 4; c.arc(x0 + aw * (i + 0.5), y + aw * 0.42, aw * 0.5, Math.PI * 1.15, Math.PI * 1.85); c.stroke(); }
+  c.restore();
+}
+function hill(c, W, H, pts, col){
+  c.fillStyle = col; c.beginPath(); c.moveTo(0, H);
+  pts.forEach(function(p, i){ if (!i) c.lineTo(p[0] * W, p[1] * H); else c.quadraticCurveTo(pts[i - 1][0] * W + (p[0] - pts[i - 1][0]) * W / 2, Math.min(p[1], pts[i - 1][1]) * H, p[0] * W, p[1] * H); });
+  c.lineTo(W, H); c.closePath(); c.fill();
+}
+
+/* modèles */
+function tplFourviere(c, W, H){
+  var g = c.createLinearGradient(0, 0, 0, H * 0.8);
+  g.addColorStop(0, "#1E2350"); g.addColorStop(0.42, "#6E3A6E"); g.addColorStop(0.72, "#E0645F"); g.addColorStop(1, "#F8B867");
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  var sx = W * 0.47, sy = H * 0.63, rg = c.createRadialGradient(sx, sy, 5, sx, sy, H * 0.42);
+  rg.addColorStop(0, "rgba(255,232,170,0.95)"); rg.addColorStop(0.12, "rgba(255,200,120,0.55)"); rg.addColorStop(1, "rgba(255,150,90,0)");
+  c.fillStyle = rg; c.fillRect(0, 0, W, H);
+  c.fillStyle = "#FFE7B0"; c.beginPath(); c.arc(sx, sy, H * 0.05, 0, 7); c.fill();
+  hill(c, W, H, [[0, 0.66], [0.12, 0.5], [0.27, 0.43], [0.42, 0.52], [0.6, 0.65], [1, 0.68]], "#4A2748");
+  drawMetalTower(c, W * 0.13, H * 0.505, H * 0.2, "#3A1D3A");
+  drawBasilica(c, W * 0.27, H * 0.445, W * 0.11, "#3A1D3A");
+  drawFacades(c, 0, W, H * 0.79, H * 0.12, "#2A1530", "#FFD27A", 11, 0.28);
+  drawRiver(c, W, H * 0.8, H, ["#E48A69", "#8A466B", "#2A2048"], function(r){ return r() > 0.5 ? "#FFE1A0" : "#FFB27A"; }, 3);
+  drawBridge(c, 0, W * 0.42, H * 0.815, "#25132A", 4);
+}
+function tplLumieres(c, W, H){
+  var g = c.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#070B24"); g.addColorStop(0.6, "#1A2760"); g.addColorStop(1, "#2B1C55");
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  var r = rndGen(5);
+  for (var i = 0; i < 140; i++) { c.fillStyle = "rgba(255,255,255," + (0.3 + r() * 0.7) + ")"; c.fillRect(r() * W, r() * H * 0.5, 1.6, 1.6); }
+  var beams = ["rgba(255,90,160,0.20)", "rgba(80,200,255,0.20)", "rgba(255,210,90,0.22)", "rgba(150,110,255,0.20)", "rgba(60,230,170,0.18)"];
+  beams.forEach(function(col, k){
+    var bx = W * (0.12 + k * 0.19);
+    c.fillStyle = col; c.beginPath(); c.moveTo(bx - 8, H * 0.8); c.lineTo(bx + 8, H * 0.8); c.lineTo(bx + 120 - k * 50, 0); c.lineTo(bx + 30 - k * 50, 0); c.fill();
+  });
+  hill(c, W, H, [[0, 0.62], [0.1, 0.5], [0.24, 0.44], [0.38, 0.55], [0.55, 0.7], [1, 0.72]], "#121736");
+  drawBasilica(c, W * 0.24, H * 0.455, W * 0.1, "#F6C35A", "rgba(255,200,90,0.9)");
+  drawMetalTower(c, W * 0.1, H * 0.51, H * 0.18, "#C9A04A");
+  c.save();
+  c.fillStyle = "#1A1F45"; c.fillRect(W * 0.76, H * 0.36, W * 0.045, H * 0.44);
+  c.fillStyle = "#E25A4C"; c.beginPath(); c.moveTo(W * 0.76, H * 0.36); c.lineTo(W * 0.7825, H * 0.28); c.lineTo(W * 0.805, H * 0.36); c.fill();
+  c.fillStyle = "#1A1F45"; c.beginPath(); c.moveTo(W * 0.83, H * 0.8); c.lineTo(W * 0.83, H * 0.3); c.lineTo(W * 0.865, H * 0.26); c.lineTo(W * 0.865, H * 0.8); c.fill();
+  c.fillStyle = "#1A1F45"; c.fillRect(W * 0.69, H * 0.52, W * 0.06, H * 0.3); c.fillRect(W * 0.885, H * 0.47, W * 0.07, H * 0.35);
+  var rr = rndGen(9);
+  [[0.76, 0.36, 0.045, 0.44], [0.83, 0.3, 0.035, 0.5], [0.69, 0.52, 0.06, 0.3], [0.885, 0.47, 0.07, 0.35]].forEach(function(b){
+    for (var y = b[1] * H + 10; y < (b[1] + b[3]) * H; y += 14) for (var x = b[0] * W + 5; x < (b[0] + b[2]) * W - 5; x += 10) if (rr() < 0.4) { c.fillStyle = rr() > 0.5 ? "#FFE08A" : "#9FD8FF"; c.fillRect(x, y, 4, 6); }
+  });
+  c.restore();
+  drawFacades(c, 0, W, H * 0.82, H * 0.11, "#0E1230", "#FFC66B", 21, 0.35);
+  var rl = rndGen(13);
+  for (var x = 6; x < W; x += 9 + rl() * 10) { c.fillStyle = "#FFB347"; c.shadowColor = "#FFB347"; c.shadowBlur = 8; c.fillRect(x, H * 0.815 - (rl() * H * 0.08), 3, 4); }
+  c.shadowBlur = 0;
+  drawRiver(c, W, H * 0.83, H, ["#1B2458", "#0A0E26"], function(r){ var cs = ["#FF6FB0", "#5FD3FF", "#FFD36B", "#9C7BFF"]; return cs[Math.floor(r() * cs.length)]; }, 17);
+}
+function tplConfluence(c, W, H){
+  var g = c.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#CFE8F3"); g.addColorStop(0.55, "#F6E6D3"); g.addColorStop(1, "#EED9BF");
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  c.fillStyle = "rgba(255,190,120,0.85)"; c.beginPath(); c.arc(W * 0.62, H * 0.2, H * 0.08, 0, 7); c.fill();
+  hill(c, W, H, [[0, 0.42], [0.15, 0.3], [0.3, 0.36], [0.45, 0.46], [1, 0.5]], "#B9A7C9");
+  drawBasilica(c, W * 0.16, H * 0.315, W * 0.07, "#8F7BA6");
+  var gr = c.createLinearGradient(0, H * 0.5, 0, H); gr.addColorStop(0, "#E9DCC6"); gr.addColorStop(1, "#D9C7A8");
+  c.fillStyle = gr; c.beginPath(); c.moveTo(0, H * 0.5); c.quadraticCurveTo(W * 0.4, H * 0.46, W, H * 0.52); c.lineTo(W, H); c.lineTo(0, H); c.fill();
+  drawFacades(c, W * 0.55, W, H * 0.5, H * 0.05, "#CDBBA4", "#F1E6D6", 31, 0.2, false);
+  c.lineCap = "round";
+  c.strokeStyle = "#7FA07F"; c.lineWidth = H * 0.11; c.beginPath(); c.moveTo(-50, H * 0.55); c.bezierCurveTo(W * 0.2, H * 0.62, W * 0.3, H * 0.8, W * 0.42, H * 1.05); c.stroke();
+  c.strokeStyle = "#3D82BF"; c.lineWidth = H * 0.15; c.beginPath(); c.moveTo(W * 0.62, H * 0.45); c.bezierCurveTo(W * 0.6, H * 0.7, W * 0.5, H * 0.85, W * 0.42, H * 1.05); c.stroke();
+  c.strokeStyle = "rgba(255,255,255,0.45)"; c.lineWidth = 3;
+  for (var i = 0; i < 6; i++) { c.beginPath(); c.moveTo(W * (0.5 + i * 0.012), H * (0.6 + i * 0.05)); c.lineTo(W * (0.53 + i * 0.012), H * (0.62 + i * 0.05)); c.stroke(); }
+  var mx = W * 0.4, my = H * 0.84;
+  c.fillStyle = "#9FB6C9"; c.beginPath(); c.moveTo(mx - 120, my); c.lineTo(mx - 70, my - 95); c.lineTo(mx + 40, my - 120); c.lineTo(mx + 130, my - 40); c.lineTo(mx + 90, my); c.fill();
+  c.fillStyle = "#D6E3EE"; c.beginPath(); c.moveTo(mx - 70, my - 95); c.lineTo(mx + 40, my - 120); c.lineTo(mx + 10, my - 30); c.fill();
+  c.fillStyle = "#7E97AD"; c.beginPath(); c.moveTo(mx + 10, my - 30); c.lineTo(mx + 130, my - 40); c.lineTo(mx + 90, my); c.lineTo(mx - 20, my); c.fill();
+  c.fillStyle = "#F28C28"; c.fillRect(W * 0.12, H * 0.66, 120, 110);
+  c.fillStyle = "#EED9BF"; for (var k = 0; k < 4; k++) { c.beginPath(); c.arc(W * 0.12 + 20 + k * 27, H * 0.66 + 30 + (k % 2) * 40, 11, 0, 7); c.fill(); }
+}
+function tplRadio(c, W, H, loc){
+  var g = c.createLinearGradient(0, 0, W, H);
+  g.addColorStop(0, "#0B3D35"); g.addColorStop(1, "#03140F");
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  c.strokeStyle = "rgba(60,201,166,0.12)"; c.lineWidth = 1;
+  for (var x = 0; x < W; x += 70) { c.beginPath(); c.moveTo(x, 0); c.lineTo(x, H); c.stroke(); }
+  for (var y = 0; y < H; y += 70) { c.beginPath(); c.moveTo(0, y); c.lineTo(W, y); c.stroke(); }
+  c.fillStyle = "rgba(60,201,166,0.09)"; c.font = "700 " + Math.round(H * 0.2) + 'px "JetBrains Mono", monospace'; c.fillText(loc || "QSL", W * 0.04, H * 0.97);
+  var ax = W * 0.22, ay = H * 0.78;
+  drawMetalTower(c, ax, ay, H * 0.5, "#3CC9A6");
+  c.strokeStyle = "rgba(60,201,166,0.55)"; c.lineWidth = 4;
+  for (var i = 1; i <= 5; i++) { c.globalAlpha = 1 - i * 0.16; c.beginPath(); c.arc(ax, ay - H * 0.55, i * 40, -Math.PI * 0.35, Math.PI * 0.35); c.stroke(); c.beginPath(); c.arc(ax, ay - H * 0.55, i * 40, Math.PI * 0.65, Math.PI * 1.35); c.stroke(); }
+  c.globalAlpha = 1;
+}
+function tplPhoto(c, W, H){
+  if (!QSL.photo) { tplRadio(c, W, H); c.fillStyle = "rgba(255,255,255,.85)"; c.font = "600 34px Barlow, sans-serif"; c.fillText("Choisis une photo dans tes dossiers", 60, H * 0.5); return; }
+  var im = QSL.photo, s = Math.max(W / im.width, H / im.height), w = im.width * s, h = im.height * s;
+  c.drawImage(im, (W - w) / 2, (H - h) / 2, w, h);
+}
+
+/* mise en page des infos du QSO */
+function wrapLines(c, txt, maxW){
+  var words = String(txt || "").split(/\s+/), lines = [], cur = "";
+  words.forEach(function(w){ var t = cur ? cur + " " + w : w; if (c.measureText(t).width > maxW && cur) { lines.push(cur); cur = w; } else cur = t; });
+  if (cur) lines.push(cur);
+  return lines;
+}
+function fitText(c, txt, weight, size, fam, maxW){ var s = size; c.font = weight + " " + s + "px " + fam; while (s > 10 && c.measureText(txt).width > maxW) { s--; c.font = weight + " " + s + "px " + fam; } return s; }
+function qslMyCall(q){ return q.mycall || (stations().filter(function(st){ return st.id === q.sid; })[0] || activeSt()).call || S.settings.mycall || ""; }
+function drawQsl(cv, q){
+  var W = QSL.W, H = QSL.H, c = cv.getContext("2d"), cfg = qslCfg();
+  cv.width = W; cv.height = H;
+  var tpl = cfg.tpl, my = qslMyCall(q), hp = qHome(q);
+  var myLoc = q.myloc || (hp ? llToLoc(hp.lat, hp.lon, 6) : "");
+  if (tpl === "lumieres") tplLumieres(c, W, H);
+  else if (tpl === "confluence") tplConfluence(c, W, H);
+  else if (tpl === "radio") tplRadio(c, W, H, myLoc.slice(0, 6));
+  else if (tpl === "photo") tplPhoto(c, W, H);
+  else tplFourviere(c, W, H);
+  var mono = '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', sans = 'Barlow, system-ui, -apple-system, Roboto, sans-serif';
+  var dark = tpl === "confluence" ? "#1E2B3A" : "#FFFFFF";
+  /* voile pour la lisibilité */
+  var vg = c.createLinearGradient(0, 0, 0, H * 0.4);
+  vg.addColorStop(0, tpl === "confluence" ? "rgba(255,255,255,0.55)" : "rgba(0,0,0,0.45)"); vg.addColorStop(1, "rgba(0,0,0,0)");
+  c.fillStyle = vg; c.fillRect(0, 0, W * 0.55, H * 0.4);
+  /* mon indicatif */
+  c.save();
+  c.shadowColor = tpl === "confluence" ? "rgba(255,255,255,0.6)" : "rgba(0,0,0,0.55)"; c.shadowBlur = 14;
+  c.fillStyle = dark; c.textBaseline = "top";
+  var cs = fitText(c, my || "MON INDICATIF", "700", 104, mono, W * 0.47);
+  c.fillText(my || "MON INDICATIF", 56, 46);
+  c.font = "600 30px " + sans;
+  var myPlace = [q.myqth || (hp && hp.label) || "", myLoc, (detectCountry(my, "") || {}).name || ""].filter(Boolean).join("  –  ");
+  fitText(c, myPlace, "600", 30, sans, W * 0.47); c.fillText(myPlace, 60, 46 + cs + 14);
+  c.restore();
+  /* légende de l'image */
+  var cap = tpl === "photo" ? (cfg.cap || "") : (QSL_TPLS.filter(function(t){ return t[0] === tpl; })[0] || [0, 0, ""])[2];
+  if (cap) { c.save(); c.font = "italic 500 24px " + sans; c.fillStyle = tpl === "confluence" ? "rgba(30,43,58,.8)" : "rgba(255,255,255,.85)"; c.shadowColor = "rgba(0,0,0,.6)"; c.shadowBlur = tpl === "confluence" ? 0 : 6; c.fillText(cap, 60, H - 46); c.restore(); }
+  /* panneau QSO */
+  var px = W * 0.535, py = H * 0.075, pw = W * 0.425, ph = H * 0.85;
+  c.save();
+  c.shadowColor = "rgba(0,0,0,0.35)"; c.shadowBlur = 24; c.fillStyle = "rgba(255,255,255,0.93)";
+  rrect(c, px, py, pw, ph, 22); c.fill(); c.restore();
+  var ink = "#14202B", mut = "#5A6875", acc = "#0B7A62", x = px + 36, y = py + 30, iw = pw - 72;
+  c.textBaseline = "top";
+  c.fillStyle = acc; c.font = "700 22px " + sans; c.fillText(q.swl ? "RAPPORT D\u2019ÉCOUTE (SWL)" : "CONFIRMATION DE QSO", x, y);
+  c.fillStyle = mut; c.font = "600 22px " + sans; var tl = "QSL"; c.fillText(tl, px + pw - 36 - c.measureText(tl).width, y);
+  y += 40;
+  c.fillStyle = mut; c.font = "500 22px " + sans; c.fillText(q.swl ? "Station entendue" : "À la station", x, y); y += 28;
+  c.fillStyle = ink; var s2 = fitText(c, q.call, "700", 64, mono, iw); c.fillText(q.call, x, y); y += s2 + 8;
+  var who = [q.name, q.qth, (q._c && q._c.name) || q.pays].filter(Boolean).join(", ");
+  if (who) { c.fillStyle = mut; fitText(c, who, "500", 24, sans, iw); c.fillText(who, x, y); y += 34; }
+  y += 6; c.fillStyle = "#D2DAE1"; c.fillRect(x, y, iw, 2); y += 16;
+  var fr = q.freq ? String(+(+q.freq).toFixed(4)).replace(".", ",") + " MHz" : "";
+  var rows = [["Date (UTC)", fDate(q.date)], ["Heure (UTC)", fTime(q.ton)], ["Fréquence", [fr, q.band].filter(Boolean).join("  ")], ["Mode", q.mode || "–"],
+    [q.swl ? "Report d\u2019écoute" : "Report donné", (q.swl ? q.rr : q.rs) || "–"]];
+  if (q.swl && q.call2) rows.push(["En QSO avec", q.call2 + (q.rr2 ? "  (" + q.rr2 + ")" : "")]);
+  if (q._d) rows.push(["Distance", km(q._d.d)]);
+  rows.forEach(function(r){
+    c.fillStyle = mut; c.font = "500 23px " + sans; c.fillText(r[0], x, y + 4);
+    c.fillStyle = ink; var vs = fitText(c, r[1], "700", 28, mono, iw * 0.6); c.fillText(r[1], x + iw - c.measureText(r[1]).width, y + (28 - vs) / 2);
+    y += 40;
+  });
+  var gear = [q.myrig, q.myant, q.pwr].filter(Boolean).join(" – ");
+  if (gear) { y += 4; c.fillStyle = mut; c.font = "500 21px " + sans; wrapLines(c, "Ma station : " + gear, iw).slice(0, 2).forEach(function(l){ c.fillText(l, x, y); y += 27; }); }
+  y += 8;
+  c.fillStyle = ink; c.font = "italic 500 24px " + sans;
+  wrapLines(c, cfg.msg, iw).slice(0, 3).forEach(function(l){ c.fillText(l, x, y); y += 31; });
+  var sig = "73" + (cfg.op ? " – " + cfg.op : "") + (my ? " – " + my : "");
+  c.fillStyle = acc; fitText(c, sig, "700", 30, sans, iw); c.fillText(sig, x, py + ph - 64);
+  c.fillStyle = mut; c.font = "500 19px " + sans; c.fillText("PSE QSL TNX  ☐       TNX QSL  ☐", x, py + ph - 28);
+}
+
+/* fenêtre QSL */
+function qslMail(q){
+  var my = qslMyCall(q), cfg = qslCfg(), lq = qLocal(q);
+  var fr = q.freq ? String(+(+q.freq).toFixed(4)).replace(".", ",") + " MHz" : "";
+  var subj = "QSL " + (my ? my + " / " : "") + q.call + " – " + fDate(q.date) + (q.band ? " – " + q.band : "");
+  var lines = ["Bonjour" + (q.name ? " " + q.name : "") + ",", "", (q.swl ? "Je t\u2019ai entendu en QSO" + (q.call2 ? " avec " + q.call2 : "") + " et je t\u2019envoie mon rapport d\u2019écoute." : "Merci pour notre contact radio ! Voici ma carte QSL de confirmation."), "",
+    "Indicatif : " + q.call,
+    "Date : " + fDate(q.date) + " à " + fTime(q.ton) + " UTC" + (lq.time !== q.ton ? " (" + fTime(lq.time) + " heure locale)" : ""),
+    "Fréquence : " + [fr, q.band ? "(" + q.band + ")" : "", q.mode].filter(Boolean).join(" "),
+    (q.swl ? "Report d\u2019écoute : " + (q.rr || "–") : "Report donné : " + (q.rs || "–") + (q.rr ? " – report reçu : " + q.rr : "")),
+    "Ma station : " + [my, q.myqth, q.myloc ? "(" + q.myloc + ")" : ""].filter(Boolean).join(" ") + ([q.myrig, q.myant, q.pwr].filter(Boolean).length ? " – " + [q.myrig, q.myant, q.pwr].filter(Boolean).join(", ") : ""),
+    q._d ? "Distance : " + km(q._d.d) : "", "", cfg.msg, "", "73" + (cfg.op ? " – " + cfg.op : "") + (my ? " – " + my : "")];
+  return {subj:subj, body:lines.filter(function(l, i){ return l !== "" || (lines[i - 1] !== "" ); }).join("\n")};
+}
+function qslFileName(q){ var mc = qslMyCall(q); return "QSL_" + (mc ? mc.replace(/[^A-Z0-9]+/gi, "-") + "_" : "") + q.call.replace(/[^A-Z0-9]+/gi, "-") + "_" + (q.date || "") + ".jpg"; }
+function qslBlob(){ return dataUrlBlob($("qslCanvas").toDataURL("image/jpeg", 0.9)); }
+function updQ(id, patch){
+  var q = S.qsos[id]; if (!q) return;
+  Object.assign(q, patch);
+  var w = {}; w[id] = stripTmp(q, false); write(q.dk, w);
+  saveLocal(); refresh();
+}
+function qslMarkSent(){
+  var q = S.qsos[QSL.id]; if (!q) return;
+  updQ(q.id, {qsls:"Y", qslsd:utcParts().date.replace(/-/g, ""), qslsv:"E"});
+  renderQslInfo();
+}
+function renderQslInfo(){
+  var q = S.qsos[QSL.id], el = $("qslInfo"); if (!q || !el) return;
+  el.textContent = q.qsls === "Y" ? "QSL déjà envoyée le " + fDate(q.qslsd) + "." : (q.email ? "" : "Pas d\u2019adresse e-mail pour ce contact : saisis-la ci-dessus, elle sera gardée dans sa fiche.");
+}
+function qslRedraw(){ var q = S.qsos[QSL.id]; if (q) drawQsl($("qslCanvas"), q); }
+function qslTplUi(){
+  var cfg = qslCfg();
+  $("qslTpls").innerHTML = QSL_TPLS.map(function(t){ return '<button type="button" class="tplbtn' + (t[0] === cfg.tpl ? " on" : "") + '" data-tpl="' + t[0] + '" aria-pressed="' + (t[0] === cfg.tpl) + '">' + esc(t[1]) + '</button>'; }).join("");
+  $("qslPhotoLbl").hidden = cfg.tpl !== "photo"; $("qslCapRow").hidden = cfg.tpl !== "photo";
+  qslRedraw();
+}
+function openQsl(id){
+  var q = S.qsos[id || editId || SEL]; if (!q) { toast("Sélectionne d\u2019abord un contact dans le journal"); return; }
+  QSL.id = q.id;
+  var cfg = qslCfg();
+  $("qslTitle").textContent = "QSL pour " + q.call;
+  $("qslTo").value = q.email || "";
+  $("qslOp").value = cfg.op; $("qslMsg").value = cfg.msg; $("qslCap").value = cfg.cap || "";
+  $("qslTpls").innerHTML = QSL_TPLS.map(function(t){ return '<button type="button" class="tplbtn' + (t[0] === cfg.tpl ? " on" : "") + '" data-tpl="' + t[0] + '" aria-pressed="' + (t[0] === cfg.tpl) + '">' + esc(t[1]) + '</button>'; }).join("");
+  $("qslPhotoLbl").hidden = cfg.tpl !== "photo"; $("qslCapRow").hidden = cfg.tpl !== "photo";
+  $("qslSheet").hidden = false;
+  if (!QSL.photo) { try { var d = localStorage.getItem(QSL_PHOTO_LS); if (d) { var im = new Image(); im.onload = function(){ QSL.photo = im; qslRedraw(); }; im.src = d; } } catch (e) {} }
+  var go = function(){ qslRedraw(); renderQslInfo(); };
+  if (document.fonts && document.fonts.load) Promise.all([document.fonts.load('700 40px "JetBrains Mono"'), document.fonts.load("600 30px Barlow"), document.fonts.load("italic 500 24px Barlow")]).then(go, go); else go();
+}
+function qslSend(direct){
+  var q = S.qsos[QSL.id]; if (!q) return;
+  var to = $("qslTo").value.trim();
+  if (to && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) { toast("Adresse e-mail invalide"); $("qslTo").focus(); return; }
+  if (to !== (q.email || "")) updQ(q.id, {email:to});
+  var m = qslMail(q), name = qslFileName(q), blob = qslBlob();
+  var coarse = window.matchMedia && window.matchMedia("(pointer:coarse)").matches;
+  var mailto = "mailto:" + encodeURIComponent(to).replace(/%40/g, "@") + "?subject=" + encodeURIComponent(m.subj) + "&body=" + encodeURIComponent(m.body);
+  if (!direct && coarse && navigator.canShare && typeof File === "function") {
+    var f = new File([blob], name, {type:"image/jpeg"});
+    if (navigator.canShare({files:[f]})) {
+      if (to && navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(to).catch(function(){});
+      navigator.share({files:[f], title:m.subj, text:m.body}).then(function(){
+        qslMarkSent(); toast(to ? "Adresse " + to + " copiée : colle-la comme destinataire" : "QSL partagée");
+      }, function(e){ if (!e || e.name !== "AbortError") { window.location.href = mailto; } });
+      return;
+    }
+  }
+  saveAs(blob, name, "image/jpeg").then(function(saved){
+    window.location.href = mailto.replace("&body=", "&body=" + encodeURIComponent("(Carte QSL à joindre : " + (saved || name) + ")\n\n"));
+    qslMarkSent();
+    toast("Mail prêt : joins l\u2019image " + (saved || name) + " qui vient d\u2019être enregistrée");
+  });
+}
+function qslPickPhoto(file){
+  if (!file) return;
+  var rd = new FileReader();
+  rd.onload = function(){
+    var im = new Image();
+    im.onload = function(){
+      var cv = document.createElement("canvas"); cv.width = QSL.W; cv.height = QSL.H;
+      var s = Math.max(QSL.W / im.width, QSL.H / im.height), w = im.width * s, h = im.height * s;
+      cv.getContext("2d").drawImage(im, (QSL.W - w) / 2, (QSL.H - h) / 2, w, h);
+      var d = cv.toDataURL("image/jpeg", 0.82);
+      try { localStorage.setItem(QSL_PHOTO_LS, d); } catch (e) { toast("Photo utilisée pour cette fois (trop lourde pour être gardée)"); }
+      var im2 = new Image(); im2.onload = function(){ QSL.photo = im2; qslSaveCfg({tpl:"photo"}); qslTplUi(); }; im2.src = d;
+    };
+    im.onerror = function(){ toast("Image illisible"); };
+    im.src = rd.result;
+  };
+  rd.readAsDataURL(file);
+}
+
 /* ---------- Réglages et stations ---------- */
 var TZ_CHOICES = [["","Automatique (selon le lieu)"],["Europe/Paris","France métropolitaine"],["Europe/London","Royaume-Uni, Irlande"],["Europe/Lisbon","Portugal"],
   ["Atlantic/Canary","Canaries"],["Europe/Berlin","Europe centrale"],["Europe/Athens","Europe de l\u2019Est"],["Africa/Casablanca","Maroc"],["America/Guadeloupe","Antilles"],
@@ -3551,7 +3967,7 @@ $("logSearch").addEventListener("input", function(){ clearTimeout(searchT); sear
 $("tabLog").addEventListener("click", function(){ showTab("log"); saveLocal(); });
 $("tabMap").addEventListener("click", function(){ showTab("map"); saveLocal(); });
 $("tabProp").addEventListener("click", function(){ showTab("prop"); saveLocal(); });
-$("propBand").innerHTML = PROP_BANDS.map(function(b){ return '<option value="' + b[0] + '">' + b[2] + '</option>'; }).join("");
+$("propBand").innerHTML = PROP_BANDS.map(function(b){ return '<option value="' + b[0] + '">' + esc(bandInfo(b[0]) ? bandLabel(b[0]) : b[2]) + '</option>'; }).join("");
 $("propBand").addEventListener("change", function(){ S.ui.propBand = this.value; saveLocal(); renderProp(); });
 $("propRefresh").addEventListener("click", function(){ propFetch(true); });
 window.addEventListener("online", function(){ if (!$("panelProp").hidden) propFetch(false); });
@@ -3674,6 +4090,36 @@ $("btnHere").addEventListener("click", function(){ GPS_DENIED = false; syncGps()
 $("btnTimeMode").addEventListener("click", function(){ setTimeMode(S.ui.timeMode === "utc" ? "local" : "utc"); });
 if (window.matchMedia) { var mq = window.matchMedia("(prefers-color-scheme: dark)"); if (mq.addEventListener) mq.addEventListener("change", function(){ if (chart) renderMap(false); }); }
 $("btnWipe").addEventListener("click", wipeAll);
+fillBandSelect();
+$("fBandSel").addEventListener("change", function(){
+  var b = bandInfo(this.value); if (!b) return;
+  var f = parseFreq(F.fFreq.value);
+  if (!f || f < b[2] || f > b[3]) { var d = b[2] < 1 ? 4 : b[2] >= 1000 ? 0 : Math.max(3, decOf(b[2], b[3])); F.fFreq.value = frNum(b[2], d); }
+  updateBand(); if (!rstTouched) resetRst(); syncBandSelect(); renderStation();
+  F.fFreq.focus(); try { F.fFreq.select(); } catch (e) {}
+});
+F.fFreq.addEventListener("input", syncBandSelect);
+$("qslClose").addEventListener("click", function(){ $("qslSheet").hidden = true; });
+$("qslSheet").addEventListener("keydown", function(e){ if (e.key === "Escape") { e.stopPropagation(); $("qslSheet").hidden = true; } });
+$("qslTpls").addEventListener("click", function(e){
+  var b = e.target.closest("[data-tpl]"); if (!b) return;
+  var t = b.getAttribute("data-tpl");
+  qslSaveCfg({tpl:t});
+  if (t === "photo" && !QSL.photo) { try { if (!localStorage.getItem(QSL_PHOTO_LS)) $("qslPhoto").click(); } catch (x) {} }
+  qslTplUi();
+});
+$("qslPhoto").addEventListener("change", function(){ qslPickPhoto(this.files && this.files[0]); this.value = ""; });
+var qslT = null;
+["qslOp", "qslMsg", "qslCap"].forEach(function(id){ $(id).addEventListener("input", function(){
+  clearTimeout(qslT);
+  var patch = {}; patch[id === "qslOp" ? "op" : id === "qslMsg" ? "msg" : "cap"] = this.value;
+  S.settings.qsl = Object.assign(qslCfg(), S.settings.qsl || {}, patch);
+  qslRedraw();
+  qslT = setTimeout(saveSettingsCloud, 800);
+}); });
+$("qslSendBtn").addEventListener("click", function(){ qslSend(false); });
+$("qslMailBtn").addEventListener("click", function(){ qslSend(true); });
+$("qslSaveBtn").addEventListener("click", function(){ var q = S.qsos[QSL.id]; if (q) saveAs(qslBlob(), qslFileName(q), "image/jpeg"); });
 $("btnInstall").addEventListener("click", openInstall);
 $("instClose").addEventListener("click", function(){ $("installSheet").hidden = true; });
 $("installSheet").addEventListener("keydown", function(e){ if (e.key === "Escape") $("installSheet").hidden = true; });
@@ -3727,6 +4173,7 @@ F.fPwr.value = activeSt().pwr || "";
 $("btnTimeMode").textContent = S.ui.timeMode === "utc" ? "UTC" : "Heure locale";
 refresh();
 updateTon();
+syncBandSelect();
 var TABS_OK = {log:1, map:1, prop:1};
 showTab(TABS_OK[S.ui.tab] ? S.ui.tab : "log");
 setView(S.ui.view === "log" || S.ui.view === "map" || S.ui.view === "prop" ? S.ui.view : "entry");
