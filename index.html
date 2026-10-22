@@ -7,9 +7,9 @@
 <meta name="theme-color" content="#FFFFFF">
 <meta name="description" content="Carnet de trafic CB et radioamateur : saisie rapide des QSO, fiche station, carte et vidéo.">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" type="image/png" sizes="32x32" href="icons/favicon-32.png">
-<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
-<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="apple-mobile-web-app-title" content="Carnet">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="application-name" content="Carnet de trafic">
@@ -2377,8 +2377,8 @@ function openInstall(){
     ev.userChoice.then(function(c){ $("installSheet").hidden = true; if (c && c.outcome === "accepted") toast("Carnet installé"); });
   });
 }
-var PWA_FILES = [["manifest.webmanifest", "Fiche d\u2019installation"], ["sw.js", "Fonctionnement hors ligne"], ["icons/icon-192.png", "Icône"],
-  ["icons/icon-512.png", "Grande icône"], ["icons/icon-maskable-512.png", "Icône Android"], ["icons/apple-touch-icon.png", "Icône iPhone et iPad"]];
+var PWA_FILES = [["manifest.webmanifest", "Fiche d\u2019installation"], ["sw.js", "Fonctionnement hors ligne"], ["icon-192.png", "Icône"],
+  ["icon-512.png", "Grande icône"], ["icon-maskable-512.png", "Icône Android"], ["apple-touch-icon.png", "Icône iPhone et iPad"]];
 function checkOnline(){
   var box = $("instDiag"); if (!box) return;
   Promise.all(PWA_FILES.map(function(f){
@@ -2392,7 +2392,7 @@ function checkOnline(){
       return '<li class="' + st + '"><span>' + (st === "ok" ? "✓" : st === "ko" ? "✗" : "–") + '</span>' + f[1] + ' <code>' + f[0] + '</code></li>';
     }).join("") + '<li class="' + (swOn ? "ok" : "na") + '"><span>' + (swOn ? "✓" : "…") + '</span>Hors ligne ' + (swOn ? "actif" : "en préparation (relance la page une fois)") + '</li></ul>';
     if (off) h += '<p class="note-small">Pas de connexion : vérification impossible pour l\u2019instant.</p>';
-    else if (miss.length) h += '<p class="warnmsg">Il manque ' + miss.length + ' fichier' + (miss.length > 1 ? "s" : "") + ' sur ton site : dépose-' + (miss.length > 1 ? "les" : "le") + ' dans le dépôt GitHub, au même niveau que index.html (le dossier <code>icons</code> compris). Sans eux, le carnet ne peut pas s\u2019installer.</p>';
+    else if (miss.length) h += '<p class="warnmsg">Il manque ' + miss.length + ' fichier' + (miss.length > 1 ? "s" : "") + ' sur ton site : dépose-' + (miss.length > 1 ? "les" : "le") + ' dans le dépôt GitHub, au même niveau que index.html. Sans eux, le carnet ne peut pas s\u2019installer.</p>';
     else h += '<p class="note-small">Tout est en place : le carnet peut s\u2019installer sur ce support.</p>';
     box.innerHTML = h;
   });
