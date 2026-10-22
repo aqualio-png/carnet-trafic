@@ -1,5 +1,5 @@
 /* Carnet de trafic : fonctionnement hors ligne */
-var VERSION = "carnet-v7-2026-10-22";
+var VERSION = "carnet-v8-2026-10-22";
 var SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png",
   "./icon-maskable-192.png", "./icon-maskable-512.png", "./apple-touch-icon.png", "./favicon-32.png", "./icon.svg"];
 var RUNTIME = "carnet-ext-v1";

@@ -349,6 +349,40 @@ body:not(.swl) .swl-only{display:none !important}
 .diaglist li.ko{color:var(--bad)}
 .diaglist code{font-family:var(--mono);font-size:.78rem;color:var(--muted);margin-left:auto}
 .warnmsg{background:var(--bad-bg);color:var(--bad);border-radius:9px;padding:9px 11px;font-size:.88rem;margin:6px 0 0}
+.vidstage canvas{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000}
+.recbadge .rsize{opacity:.75;font-size:.8rem;margin-left:4px}
+.recbadge.paused i{animation:none;background:#F2B04A}
+.vumeter{position:absolute;right:10px;top:12px;width:min(30%,160px);height:8px;background:rgba(0,0,0,.55);border-radius:6px;overflow:hidden}
+.vumeter i{display:block;height:100%;width:0;background:#3CE0B5;transition:width .06s linear}
+.vumeter i.hot{background:#F2B04A}
+.vumeter i.clip{background:#FF4B3E}
+.vidopts{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:0 14px 12px}
+.vidopts .switch{display:inline-flex;align-items:center;gap:8px;font-size:.9rem;font-weight:600;cursor:pointer;min-height:40px}
+.vidopts .switch input{width:20px;height:20px;accent-color:var(--accent)}
+.vidopts .qsel{display:inline-flex;align-items:center;gap:6px;font-size:.88rem;color:var(--muted)}
+.vidopts select{background:var(--sunk);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-height:40px;font-size:16px}
+.vidmarks{color:var(--accent);font-weight:600}
+#vidTorch.on{background:var(--warn-bg);border-color:var(--warn);color:var(--warn)}
+.mapsel{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 16px;border-top:1px solid var(--line);background:color-mix(in srgb,var(--rec) 10%,var(--surface))}
+.mapsel .dot{width:12px;height:12px;border-radius:50%;background:var(--rec);flex:none;animation:blink 1.1s steps(2) infinite}
+.mapsel .mstxt{flex:1;min-width:180px;font-size:.9rem;line-height:1.35}
+.mapsel .mstxt span{color:var(--muted);font-size:.84rem}
+@media (prefers-reduced-motion:reduce){.mapsel .dot{animation:none}}
+.layout{grid-template-columns:minmax(0,1fr)}
+@media (min-width:1000px){.layout{grid-template-columns:minmax(400px,470px) minmax(0,1fr)}}
+@media (min-width:1500px){.layout{grid-template-columns:500px minmax(0,1fr)}}
+.col-entry,.logcard,.entry,.station{min-width:0}
+.entry-head{flex-wrap:wrap}
+.ton{white-space:normal;min-width:0}
+.stationbar select{min-width:0;max-width:100%}
+.stationbar .stinfo{min-width:0;overflow-wrap:anywhere}
+body{overflow-x:hidden}
+@supports (overflow:clip){body{overflow-x:clip}}
+.entry .actions .btn{white-space:nowrap}
+#btnClear kbd{display:none}
+.recbadge{left:auto;right:10px;top:30px}
+.vumeter{top:12px}
+@media (max-width:1499px){.entry .actions kbd{display:none}}
 </style>
 </head>
 <body data-view="entry">
@@ -525,8 +559,10 @@ body:not(.swl) .swl-only{display:none !important}
             <span><i style="background:var(--pin2)"></i>Département ou région</span>
             <span><i style="background:var(--warn)"></i>Pays seul</span>
             <span><i style="background:var(--ink);border-radius:2px;transform:rotate(45deg)"></i>Ma station</span>
+            <span><i style="background:var(--rec)"></i>Contact sélectionné</span>
           </div>
         </div>
+        <div class="mapsel" id="mapSel" hidden></div>
         <div class="mapwrap"><div id="map"></div><div class="mapmsg" id="mapMsg" hidden></div></div>
         <div class="mappick" id="mapPick" hidden></div>
         <div class="mapinfo" id="mapInfo"></div>
@@ -551,19 +587,30 @@ body:not(.swl) .swl-only{display:none !important}
     </div>
     <div class="vidstage">
       <video id="vidLive" playsinline muted autoplay></video>
+      <canvas id="vidCanvas" hidden></canvas>
       <video id="vidPlay" playsinline controls hidden></video>
-      <div class="recbadge" id="recBadge" hidden><i></i><span id="recTime">00:00</span></div>
+      <div class="recbadge" id="recBadge" hidden><i></i><span id="recTime">00:00</span><span class="rsize" id="recSize"></span></div>
+      <div class="vumeter" id="vuMeter" hidden title="Niveau du son"><i id="vuBar"></i></div>
       <div class="vidmsg" id="vidMsg" hidden></div>
     </div>
     <div class="vidbar">
       <button class="recbtn" id="vidRec" aria-label="Démarrer l’enregistrement"><i></i></button>
-      <button class="btn" id="vidFlip" title="Changer de caméra">Changer de caméra</button>
-      <label class="btn" id="vidNativeLbl" for="vidNative">Filmer avec l’appareil photo</label>
-      <input type="file" id="vidNative" accept="video/*" capture="environment" class="sr" tabindex="-1">
+      <button class="btn small" id="vidPause" hidden>Pause</button>
+      <button class="btn small" id="vidMark" hidden title="Noter un moment clé du QSO">Repère</button>
+      <button class="btn small" id="vidPhoto" title="Prendre une photo avec les infos du QSO">Photo</button>
+      <button class="btn small" id="vidTorch" hidden aria-pressed="false">Lampe</button>
       <span class="grow"></span>
       <button class="btn" id="vidRetake" hidden>Recommencer</button>
       <button class="btn primary" id="vidSave" hidden>Enregistrer sous…</button>
     </div>
+    <div class="vidopts" id="vidOpts">
+      <label class="switch"><input type="checkbox" id="vidOverlay" checked><span>Incruster les infos du QSO</span></label>
+      <label class="qsel">Qualité <select id="vidQuality"><option value="480">480p (léger)</option><option value="720" selected>720p</option><option value="1080">1080p</option></select></label>
+      <button class="btn small" id="vidFlip" hidden>Changer de caméra</button>
+      <label class="btn small" id="vidNativeLbl" for="vidNative">Appli caméra</label>
+      <input type="file" id="vidNative" accept="video/*" capture="environment" class="sr" tabindex="-1">
+    </div>
+    <p class="vidnote vidmarks" id="vidMarks" hidden></p>
     <p class="vidnote" id="vidNote">La vidéo reste sur ton appareil : rien n’est envoyé en ligne.</p>
   </div>
 </div>
@@ -1475,8 +1522,37 @@ function activeSt(){
   for (var i = 0; i < l.length; i++) if (l[i].id === S.settings.active) return l[i];
   return l[0];
 }
+var LIVE = null, GEO_W = null, GPS_DENIED = false, LIVE_REF = null;
+function livePos(){ var a = activeSt(); return (LIVE && a && a.kind === "mobile" && Date.now() - LIVE.t < 300000) ? LIVE : null; }
+function syncGps(){
+  var a = activeSt();
+  if (a && a.kind === "mobile" && navigator.geolocation && !GPS_DENIED) {
+    if (GEO_W !== null) return;
+    GEO_W = navigator.geolocation.watchPosition(function(p){
+      LIVE = {lat:p.coords.latitude, lon:p.coords.longitude, acc:p.coords.accuracy || 0, t:Date.now()};
+      var moved = !LIVE_REF || distBrg(LIVE_REF, LIVE).d > 0.5;
+      if (moved) { LIVE_REF = {lat:LIVE.lat, lon:LIVE.lon}; refresh(); }
+      else renderStationBar();
+    }, function(e){
+      if (e && e.code === 1) { GPS_DENIED = true; stopGps(); toast("GPS refusé : la station mobile garde la position saisie dans les réglages"); }
+      renderStationBar();
+    }, {enableHighAccuracy:true, maximumAge:10000, timeout:30000});
+    renderStationBar();
+  } else stopGps();
+}
+function stopGps(keep){
+  if (GEO_W !== null && navigator.geolocation) navigator.geolocation.clearWatch(GEO_W);
+  GEO_W = null;
+  if (!keep) { LIVE = null; LIVE_REF = null; }
+}
 function stPos(st){
   if (!st) return null;
+  var lp = (st.kind === "mobile" && st.id === activeSt().id) ? livePos() : null;
+  if (lp) {
+    var gg = {lat:lp.lat, lon:lp.lon, label:nearestTown(lp.lat, lp.lon) || llToLoc(lp.lat, lp.lon), cc:nearestCountry(lp.lat, lp.lon), gps:true, acc:lp.acc};
+    gg.zone = zoneFor(gg.cc ? COUNTRY_BY_NAME[gg.cc] : null, gg.lat, gg.lon, st.tz);
+    return gg;
+  }
   var g = null, ll = locToLL(st.loc);
   if (ll) g = {lat:ll.lat, lon:ll.lon, label:st.qth || fmtLoc(st.loc), cc:nearestCountry(ll.lat, ll.lon)};
   else if (st.qth) { var r = geoText(st.qth); if (r) g = {lat:r.lat, lon:r.lon, label:r.label, cc:r.cc, prec:r.prec}; }
@@ -1491,7 +1567,16 @@ function stZone(st){
 }
 function entryZone(){ return S.ui.timeMode === "utc" ? {off:0} : stZone(activeSt()); }
 function zoneName(z){ return z.off === 0 && !z.tz ? "UTC" : (HOME && HOME.label ? HOME.label : "heure locale"); }
-function qHome(q){ return (typeof q.mylat === "number" && typeof q.mylon === "number") ? {lat:q.mylat, lon:q.mylon} : HOME; }
+var FIXHOME = null;
+function fixedHome(){
+  var l = stations();
+  for (var i = 0; i < l.length; i++) if (l[i].kind !== "mobile") { var p = stPos(l[i]); if (p) return p; }
+  return HOME;
+}
+function qHome(q){
+  if (typeof q.mylat === "number" && typeof q.mylon === "number") return {lat:q.mylat, lon:q.mylon};
+  return FIXHOME || HOME;
+}
 function rebuildIndex(){
   IDX = {}; WK = {}; LEARN = {};
   var learnCnt = {};
@@ -1508,6 +1593,7 @@ function rebuildIndex(){
     LEARN[d] = best;
   });
   HOME = stPos(activeSt());
+  FIXHOME = fixedHome();
   SORTED.sort(function(a, b){
     var ka = (a.date || "") + (a.ton || ""), kb = (b.date || "") + (b.ton || "");
     if (ka !== kb) return ka < kb ? 1 : -1;
@@ -1650,10 +1736,8 @@ function clearForm(){
 function loadForEdit(id){
   var q = S.qsos[id]; if (!q) return;
   if (isNarrow()) setView("entry"); else showTab(S.ui.tab === "map" ? "map" : "log");
-setView(S.ui.view === "log" || S.ui.view === "map" ? S.ui.view : "entry");
-if (!isNarrow()) showTab(S.ui.tab === "map" ? "map" : "log");
-if (window.matchMedia) { var mqn = window.matchMedia("(max-width: 999px)"); var onN = function(){ if (!isNarrow()) showTab(S.ui.tab === "map" ? "map" : "log"); if (chart) setTimeout(function(){ chart.resize(); }, 60); }; if (mqn.addEventListener) mqn.addEventListener("change", onN); }
   editId = id; tonSet = true; curVideo = q.video || ""; showAttach();
+  selectQso(id, true);
   setSwl(!!q.swl);
   F.fCall.value = q.call || ""; F.fCall2.value = q.call2 || "";
   F.fFreq.value = q.freq ? String(q.freq) : "";
@@ -1710,10 +1794,12 @@ function doLog(){
     mycall: old ? (old.mycall || "") : (st.call || S.settings.mycall || ""), myloc: old ? (old.myloc || "") : (st.loc ? fmtLoc(st.loc) : (sp ? llToLoc(sp.lat, sp.lon) : "")),
     ts: old ? (old.ts || Date.now()) : Date.now()
   };
-  if (old) ["st","sid","myqth","mylat","mylon","myrig","myant","mymic"].forEach(function(k){ if (old[k] !== undefined) q[k] = old[k]; });
+  if (old) ["st","sid","myqth","mylat","mylon","myrig","myant","mymic","gps","gpsacc"].forEach(function(k){ if (old[k] !== undefined) q[k] = old[k]; });
   else {
     q.st = st.name || ""; q.sid = st.id; q.myqth = sp ? sp.label : (st.qth || "");
-    if (sp) { q.mylat = Math.round(sp.lat * 10000) / 10000; q.mylon = Math.round(sp.lon * 10000) / 10000; }
+    if (sp) { q.mylat = Math.round(sp.lat * 100000) / 100000; q.mylon = Math.round(sp.lon * 100000) / 100000; }
+    var lpq = livePos();
+    if (lpq) { q.gps = 1; q.gpsacc = Math.round(lpq.acc); q.myloc = llToLoc(lpq.lat, lpq.lon); }
     q.myrig = st.rig || ""; q.myant = st.ant || ""; q.mymic = st.mic || "";
   }
   if (z.tz) q.tz = z.tz; else if (S.ui.timeMode !== "utc") q.tzoff = z.off; else if (old) { if (old.tz) q.tz = old.tz; if (typeof old.tzoff === "number") q.tzoff = old.tzoff; }
@@ -1726,6 +1812,7 @@ function doLog(){
   if (old && old.dk && old.dk !== dk) { var del = {}; del[id] = null; write(old.dk, del); }
   S.qsos[id] = Object.assign({dk:dk}, q);
   var w = {}; w[id] = q; write(dk, w);
+  SEL = id; SEL_FOCUS = true;
   S.ui.freq = F.fFreq.value; S.ui.mode = F.fMode.value; saveLocal();
   toast((old ? "Modifié : " : (S.ui.swl ? "Écoute notée : " : "QSO enregistré : ")) + callStd);
   refresh(true);
@@ -1831,7 +1918,7 @@ function renderStation(){
     noteT = setTimeout(function(){ var o = {}; o[k] = v.trim() ? v : null; write("ops", o); }, 900);
   });
   var sm = $("seeOnMap");
-  if (sm) sm.addEventListener("click", function(){ if (isNarrow()) setView("map"); else showTab("map"); focusMap(g); });
+  if (sm) sm.addEventListener("click", function(){ if (editId) SEL = editId; SEL_FOCUS = true; if (isNarrow()) setView("map"); else showTab("map"); if (!SEL || !S.qsos[SEL]) focusMap(g); else ensureMap().then(function(){ renderMap(false); }); });
 }
 
 /* ---------- Journal ---------- */
@@ -1852,7 +1939,7 @@ function renderLog(){
     var c = q._c;
     var place = [q.qth, c ? flag(c.iso) + " " + c.name : q.pays].filter(Boolean).join(", ");
     var extra = [place, q.name, q.call2 ? "avec " + q.call2 : "", q.st && stations().length > 1 ? "depuis " + q.st : "", q.note].filter(Boolean).join(" – ");
-    return '<button class="qrow' + (q.id === editId ? " sel" : "") + '" data-id="' + esc(q.id) + '">' +
+    return '<button class="qrow' + (q.id === editId || q.id === SEL ? " sel" : "") + '" data-id="' + esc(q.id) + '">' +
       '<span class="t">' + (function(){ var lq = qLocal(q); return fDate(lq.date, true) + "<br>" + fTime(lq.time); })() + '</span>' +
       '<span class="c">' + esc(q.call) + (q.swl ? '<span class="tag-swl">écoute</span>' : "") + (q.video ? '<span class="tag-vid" title="' + esc(q.video) + '">vidéo</span>' : "") + '</span>' +
       '<span class="m"><span class="bd">' + esc(q.band || "?") + '</span> ' + esc(q.mode || "") + "<br>" + esc(q.swl ? (q.rr || "") : [q.rs, q.rr].filter(Boolean).join(" / ")) + '</span>' +
@@ -1877,6 +1964,7 @@ function ensureMap(){
       chart.on("click", function(p){ if (p.data && p.data.ids) showPick(p.data); });
       window.addEventListener("resize", function(){ if (chart) chart.resize(); });
       renderMap(true);
+      if (SEL) { SEL_FOCUS = true; setTimeout(focusSel, 80); }
     }, function(){
       mapLoading = null;
       $("mapMsg").textContent = "La carte n\u2019a pas pu se charger (connexion ?). Réessaie en rouvrant l\u2019onglet.";
@@ -1907,6 +1995,45 @@ function homePts(){
   });
   return Object.keys(hs).map(function(k){ return hs[k]; });
 }
+var SEL = null, SEL_FOCUS = false, BLINK = null, BLINK_ON = true;
+function selectQso(id, focus){
+  SEL = id; SEL_FOCUS = !!focus || SEL_FOCUS;
+  if (chart) { renderMap(false); if (focus && !$("panelMap").hidden) focusSel(); }
+  renderSelBar();
+}
+function selGeo(){
+  var q = SEL && S.qsos[SEL];
+  if (!q || !q._g) return null;
+  return {q:q, c:q._g, me:qHome(q)};
+}
+function focusSel(){
+  var s = selGeo(); if (!s || !chart) return;
+  SEL_FOCUS = false;
+  if (!s.me) { chart.setOption({geo:{center:[s.c.lon, s.c.lat], zoom:9}}); return; }
+  var cl = (s.c.lat + s.me.lat) / 2, cx = (s.c.lon + s.me.lon) / 2;
+  var span = Math.max(Math.abs(s.c.lat - s.me.lat), Math.abs(s.c.lon - s.me.lon) * Math.cos(cl * Math.PI / 180), 0.4);
+  var z = Math.max(1, Math.min(60, 180 / (span * 2 + 1)));
+  chart.setOption({geo:{center:[cx, cl], zoom:z}});
+}
+function renderSelBar(){
+  var bar = $("mapSel"); if (!bar) return;
+  var q = SEL && S.qsos[SEL];
+  if (!q) { bar.hidden = true; return; }
+  var lq = qLocal(q), fh = FIXHOME || HOME, me = q.gps ? "position GPS ±" + (q.gpsacc || "?") + " m" + (q.myloc ? " (" + q.myloc + ")" : "") : (q.myqth || q.myloc || (fh ? fh.label : ""));
+  bar.hidden = false;
+  bar.innerHTML = '<span class="dot"></span><div class="mstxt"><b class="mono">' + esc(q.call) + '</b> ' + fDate(lq.date, true) + " " + fTime(lq.time) +
+    (q._d ? " – <b>" + km(q._d.d) + "</b>" : "") + (q._g ? "" : " – position inconnue") +
+    '<br><span>Ma station : ' + esc((q.st ? q.st + ", " : "") + me) + '</span></div>' +
+    '<button class="btn small" id="selFocus">Recentrer</button><button class="btn small" id="selClear">Désélectionner</button>';
+  $("selFocus").addEventListener("click", focusSel);
+  $("selClear").addEventListener("click", function(){ SEL = null; renderSelBar(); renderMap(false); renderLog(); });
+}
+function blinkTick(){
+  if (!chart || !SEL || $("panelMap").hidden) return;
+  BLINK_ON = !BLINK_ON;
+  var o = BLINK_ON ? 1 : 0.15;
+  try { chart.setOption({series:[{id:"sel", itemStyle:{opacity:o}, label:{opacity:BLINK_ON ? 1 : 0.4}}, {id:"selLine", lineStyle:{opacity:BLINK_ON ? 0.95 : 0.25}}]}); } catch (e) {}
+}
 function renderMap(fit){
   var placed = 0, unplaced = [];
   SORTED.forEach(function(q){ if (q._g) placed++; else unplaced.push(q); });
@@ -1926,13 +2053,29 @@ function renderMap(fit){
   if (lines.length) series.push({type:"lines", coordinateSystem:"geo", silent:true, zlevel:1, lineStyle:{color:css("--accent"), opacity:0.28, width:1, curveness:0.18}, data:lines});
   series.push({type:"scatter", coordinateSystem:"geo", zlevel:2, data:data});
   var hps = homePts();
+  var lpm = livePos();
+  if (lpm) hps.push({lat:lpm.lat, lon:lpm.lon, label:"Ma position GPS actuelle ±" + Math.round(lpm.acc) + " m", act:true});
   if (hps.length) series.push({type:"scatter", coordinateSystem:"geo", zlevel:3, symbol:"diamond",
     data:hps.map(function(h){ return {name:h.label, value:[h.lon, h.lat], home:true, symbolSize:h.act ? 17 : 12, itemStyle:{color:ink, opacity:h.act ? 1 : 0.6, borderColor:surf, borderWidth:2}}; })});
+  var sg = selGeo();
+  if (sg) {
+    var red = css("--rec") || "#D92D20";
+    if (sg.me) series.push({id:"selLine", type:"lines", coordinateSystem:"geo", zlevel:4, silent:true,
+      effect:{show:true, period:2.5, trailLength:0.25, symbolSize:6, color:red},
+      lineStyle:{color:red, width:2.5, opacity:0.95, curveness:0.18}, data:[{coords:[[sg.me.lon, sg.me.lat], [sg.c.lon, sg.c.lat]]}]});
+    var sd = [{name:sg.q.call, value:[sg.c.lon, sg.c.lat], ids:[sg.q.id], prec:sg.c.prec, d:sg.q._d, symbol:"circle", symbolSize:18}];
+    if (sg.me) sd.push({name:sg.q.gps ? "Moi (GPS)" : "Moi", value:[sg.me.lon, sg.me.lat], home:true, symbol:"diamond", symbolSize:20});
+    series.push({id:"sel", type:"effectScatter", coordinateSystem:"geo", zlevel:5, showEffectOn:"render",
+      rippleEffect:{brushType:"stroke", scale:4.5, period:2},
+      itemStyle:{color:red, borderColor:"#FFFFFF", borderWidth:2},
+      label:{show:true, position:"right", formatter:"{b}", color:"#FFFFFF", backgroundColor:red, padding:[3, 6], borderRadius:4, fontWeight:"bold", fontSize:13, fontFamily:"JetBrains Mono, monospace"},
+      data:sd});
+  }
   var opt = {
     backgroundColor:"transparent",
     tooltip:{trigger:"item", confine:true, backgroundColor:surf, borderColor:border, borderWidth:1, textStyle:{color:ink, fontFamily:"Barlow, sans-serif"},
       formatter:function(p){
-        if (p.data && p.data.home) return "<b>" + esc(p.data.name) + "</b>";
+        if (p.data && p.data.home) return "<b>" + esc(p.data.name) + "</b>" + (p.seriesId === "sel" && SEL && S.qsos[SEL] ? "<br>Position lors du QSO avec " + esc(S.qsos[SEL].call) : "");
         if (!p.data || !p.data.ids) return "";
         var qs = p.data.ids.map(function(id){ return S.qsos[id]; }).filter(Boolean);
         var head = "<b>" + esc(p.data.name) + "</b>" + (p.data.d ? " – " + km(p.data.d.d) : "") + '<br><span style="opacity:.7">' + esc(PREC_TXT[p.data.prec]) + "</span>";
@@ -1948,6 +2091,11 @@ function renderMap(fit){
   if (gz) { opt.geo.center = gz.center; opt.geo.zoom = gz.zoom; }
   else { opt.geo.center = [HOME ? HOME.lon : 4, HOME ? HOME.lat + 3 : 50]; opt.geo.zoom = 4.2; }
   chart.setOption(opt, true);
+  BLINK_ON = true;
+  if (sg && !BLINK) BLINK = setInterval(blinkTick, 550);
+  if (!sg && BLINK) { clearInterval(BLINK); BLINK = null; }
+  if (sg && SEL_FOCUS && !$("panelMap").hidden) setTimeout(focusSel, 50);
+  renderSelBar();
 }
 function focusMap(g){
   ensureMap().then(function(){ if (chart && g) chart.setOption({geo:{center:[g.lon, g.lat], zoom:9}}); });
@@ -1965,7 +2113,7 @@ function showTab(t){
   $("panelLog").hidden = t !== "log";
   $("panelMap").hidden = t !== "map";
   if (isNarrow() && S.ui.view && S.ui.view !== t && S.ui.view !== "entry") { S.ui.view = t; document.body.setAttribute("data-view", t); }
-  if (t === "map") { ensureMap(); if (chart) setTimeout(function(){ chart.resize(); }, 40); }
+  if (t === "map") { ensureMap(); if (chart) setTimeout(function(){ chart.resize(); if (SEL_FOCUS) focusSel(); }, 60); }
 }
 /* ---------- Export ---------- */
 function asc(v){ return String(v).normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^\x20-\x7E]/g, ""); }
@@ -2205,10 +2353,13 @@ function importAccess(ab, fname){
     tables.map(function(t, i){ return '<button class="btn" data-t="' + i + '">' + esc(t.name) + ' (' + t.rows.length + ' fiches)</button>'; }).join("") +
     '<button class="btn" data-t="cancel">Annuler</button>';
   $("importPick").hidden = false;
+  if (isNarrow()) setView("log");
 }
 
 /* ---------- Vidéo du QSO ---------- */
-var VID = {stream:null, rec:null, chunks:[], blob:null, url:"", mime:"", facing:"user", t0:0, timer:null, saved:false, armedClose:false};
+var VQ = {"480":[854, 480, 1200000], "720":[1280, 720, 2500000], "1080":[1920, 1080, 5000000]};
+var VID = {stream:null, rec:null, cs:null, chunks:[], blob:null, url:"", mime:"", facing:"user", t0:0, paused:0, pauseAt:0, timer:null, saved:false,
+  multiCam:false, raf:0, ov:null, ovT:0, actx:null, an:null, vuData:null, marks:[], size:0, q:"720", torchOk:false, torch:false, wake:null, st:"idle"};
 function vidMime(){
   if (!window.MediaRecorder) return null;
   var c = ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
@@ -2216,22 +2367,45 @@ function vidMime(){
   for (var i = 0; i < c.length; i++) if (MediaRecorder.isTypeSupported(c[i])) return c[i];
   return "";
 }
+function canOverlay(){ var c = $("vidCanvas"); return !!(c && typeof c.captureStream === "function"); }
+function overlayOn(){ return $("vidOverlay").checked && canOverlay(); }
 function vidState(st){
-  var live = st === "live" || st === "rec", done = st === "done";
-  $("vidLive").hidden = !live && st !== "idle";
+  VID.st = st;
+  var live = st === "live" || st === "rec" || st === "pause", done = st === "done", recing = st === "rec" || st === "pause";
+  var useCv = live && overlayOn();
+  $("vidLive").hidden = !(live || st === "idle") || useCv;
+  $("vidCanvas").hidden = !useCv;
   $("vidPlay").hidden = !done;
-  $("recBadge").hidden = st !== "rec";
+  $("recBadge").hidden = !recing;
+  $("recBadge").classList.toggle("paused", st === "pause");
+  $("vuMeter").hidden = !live || !VID.an;
   $("vidRec").hidden = done || st === "error";
-  $("vidRec").classList.toggle("on", st === "rec");
-  $("vidRec").setAttribute("aria-label", st === "rec" ? "Arrêter l\u2019enregistrement" : "Démarrer l\u2019enregistrement");
-  $("vidFlip").hidden = done || st === "rec" || st === "error" || !VID.multiCam;
-  $("vidNativeLbl").hidden = st === "rec" || done;
+  $("vidRec").classList.toggle("on", recing);
+  $("vidRec").setAttribute("aria-label", recing ? "Arrêter l\u2019enregistrement" : "Démarrer l\u2019enregistrement");
+  $("vidPause").hidden = !recing || !(VID.rec && typeof VID.rec.pause === "function");
+  $("vidPause").textContent = st === "pause" ? "Reprendre" : "Pause";
+  $("vidMark").hidden = !recing;
+  $("vidMark").textContent = VID.marks.length ? "Repère (" + VID.marks.length + ")" : "Repère";
+  $("vidPhoto").hidden = !live;
+  $("vidTorch").hidden = !live || !VID.torchOk;
+  $("vidOpts").hidden = done || recing;
+  $("vidFlip").hidden = !VID.multiCam;
+  $("vidOverlay").disabled = !canOverlay();
   $("vidRetake").hidden = !done;
   $("vidSave").hidden = !done;
   if (live || done) $("vidMsg").hidden = true;
 }
-function vidMsg(t){ var m = $("vidMsg"); m.textContent = t; m.hidden = false; $("vidLive").hidden = true; }
-function stopStream(){ if (VID.stream) { VID.stream.getTracks().forEach(function(t){ t.stop(); }); VID.stream = null; } $("vidLive").srcObject = null; }
+function vidMsg(t){ var m = $("vidMsg"); m.textContent = t; m.hidden = false; $("vidLive").hidden = true; $("vidCanvas").hidden = true; }
+function stopVu(){ if (VID.actx) { try { VID.actx.close(); } catch (e) {} } VID.actx = null; VID.an = null; }
+function relWake(){ if (VID.wake) { try { VID.wake.release(); } catch (e) {} VID.wake = null; } }
+function stopStream(){
+  cancelAnimationFrame(VID.raf); VID.raf = 0;
+  stopVu();
+  if (VID.stream) { VID.stream.getTracks().forEach(function(t){ t.stop(); }); VID.stream = null; }
+  if (VID.cs) { VID.cs.getTracks().forEach(function(t){ t.stop(); }); VID.cs = null; }
+  $("vidLive").srcObject = null;
+  VID.torchOk = false; VID.torch = false;
+}
 function vidCallName(){ var c = parseCallField(F.fCall.value).call; return c ? c.replace(/[^A-Z0-9]+/g, "-").replace(/^-|-$/g, "") : "QSO"; }
 function openVideo(){
   closeMenu();
@@ -2239,12 +2413,15 @@ function openVideo(){
   var c = parseCallField(F.fCall.value).call;
   $("vidTitle").textContent = c ? "Vidéo du QSO avec " + c : "Vidéo du QSO";
   $("videoSheet").hidden = false;
-  VID.saved = false; VID.armedClose = false; $("vidClose").removeAttribute("data-armed");
+  VID.q = S.ui.vidQ || "720"; $("vidQuality").value = VID.q;
+  $("vidOverlay").checked = S.ui.vidOv !== false;
+  VID.saved = false; $("vidClose").removeAttribute("data-armed");
   $("vidNative").setAttribute("capture", VID.facing === "user" ? "user" : "environment");
+  if (!canOverlay()) $("vidOverlay").parentNode.title = "Incrustation non disponible sur ce navigateur";
   if (VID.blob) { vidState("done"); return; }
   if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || vidMime() === null) {
     vidState("error");
-    vidMsg("Ce navigateur ne permet pas de filmer directement dans la page. Utilise « Filmer avec l\u2019appareil photo ».");
+    vidMsg("Ce navigateur ne permet pas de filmer directement dans la page. Utilise « Appli caméra ».");
     return;
   }
   startCam();
@@ -2252,45 +2429,184 @@ function openVideo(){
 function startCam(){
   stopStream();
   vidState("idle"); vidMsg("Ouverture de la caméra…");
-  navigator.mediaDevices.getUserMedia({video:{facingMode:VID.facing, width:{ideal:1280}, height:{ideal:720}}, audio:true}).then(function(st){
+  var qd = VQ[VID.q] || VQ["720"];
+  var vc = {facingMode:VID.facing, width:{ideal:qd[0]}, height:{ideal:qd[1]}};
+  var ac = {echoCancellation:false, noiseSuppression:false, autoGainControl:false};
+  navigator.mediaDevices.getUserMedia({video:vc, audio:ac}).catch(function(){ return navigator.mediaDevices.getUserMedia({video:{facingMode:VID.facing}, audio:true}); }).then(function(st){
     VID.stream = st;
     var v = $("vidLive"); v.srcObject = st; v.muted = true;
     v.classList.toggle("mirror", VID.facing === "user");
-    var p = v.play(); if (p && p.catch) p.catch(function(){});
+    var pl = v.play(); if (pl && pl.catch) pl.catch(function(){});
+    startVu(st);
+    var tr = st.getVideoTracks()[0], caps = tr && tr.getCapabilities ? tr.getCapabilities() : {};
+    VID.torchOk = !!(caps && caps.torch);
+    startDraw();
     vidState("live");
     if (navigator.mediaDevices.enumerateDevices) navigator.mediaDevices.enumerateDevices().then(function(d){
       VID.multiCam = d.filter(function(x){ return x.kind === "videoinput"; }).length > 1;
-      $("vidFlip").hidden = !VID.multiCam || !!VID.rec;
+      $("vidFlip").hidden = !VID.multiCam;
     });
   }).catch(function(e){
     vidState("error");
     var n = e && e.name;
-    if (n === "NotAllowedError" || n === "SecurityError") vidMsg("L\u2019accès à la caméra est refusé ou bloqué dans cette fenêtre. Autorise la caméra dans le navigateur, ouvre le fichier téléchargé, ou utilise « Filmer avec l\u2019appareil photo ».");
+    if (n === "NotAllowedError" || n === "SecurityError") vidMsg("L\u2019accès à la caméra ou au micro est refusé. Autorise-les dans les réglages du navigateur pour ce site, ou utilise « Appli caméra ».");
     else if (n === "NotFoundError" || n === "OverconstrainedError") vidMsg("Aucune caméra trouvée sur cet appareil.");
     else if (n === "NotReadableError") vidMsg("La caméra est déjà utilisée par une autre application.");
     else vidMsg("Caméra indisponible (" + (n || "erreur") + ").");
   });
 }
+function startVu(st){
+  stopVu();
+  var AC = window.AudioContext || window.webkitAudioContext;
+  if (!AC || !st.getAudioTracks().length) return;
+  try {
+    VID.actx = new AC();
+    var src = VID.actx.createMediaStreamSource(st);
+    VID.an = VID.actx.createAnalyser(); VID.an.fftSize = 1024;
+    src.connect(VID.an);
+    VID.vuData = new Uint8Array(VID.an.fftSize);
+    if (VID.actx.state === "suspended" && VID.actx.resume) VID.actx.resume();
+  } catch (e) { stopVu(); }
+}
+function vuLevel(){
+  if (!VID.an) return 0;
+  VID.an.getByteTimeDomainData(VID.vuData);
+  var pk = 0;
+  for (var i = 0; i < VID.vuData.length; i++) { var v = Math.abs(VID.vuData[i] - 128); if (v > pk) pk = v; }
+  return pk / 128;
+}
+function startDraw(){
+  cancelAnimationFrame(VID.raf);
+  var v = $("vidLive"), cv = $("vidCanvas"), ctx = cv.getContext("2d"), bar = $("vuBar"), lvl = 0;
+  var loop = function(){
+    VID.raf = requestAnimationFrame(loop);
+    var l = vuLevel(); lvl = Math.max(l, lvl * 0.92);
+    bar.style.width = Math.round(lvl * 100) + "%";
+    bar.className = lvl > 0.95 ? "clip" : lvl > 0.7 ? "hot" : "";
+    if (!v.videoWidth || !overlayOn()) return;
+    if (cv.width !== v.videoWidth || cv.height !== v.videoHeight) { cv.width = v.videoWidth; cv.height = v.videoHeight; }
+    ctx.drawImage(v, 0, 0, cv.width, cv.height);
+    drawOverlay(ctx, cv.width, cv.height);
+  };
+  loop();
+}
+function ovInfo(){
+  var now = Date.now();
+  if (VID.ov && now - VID.ovT < 250) return VID.ov;
+  var fq = formQ(), f = parseFreq(F.fFreq.value), b = bandOf(f), st = activeSt(), z = stZone(st), l = nowIn(z);
+  var g = callOk(fq.call) ? geoOf(fq) : null, d = (g && HOME) ? distBrg(HOME, g) : null;
+  var ct = callOk(fq.call) ? detectCountry(fq.call, fq.pays) : null, lp = livePos();
+  var sec = ("0" + new Date().getUTCSeconds()).slice(-2), u = utcParts();
+  var rr = F.fRr.value.trim(), rs = F.fRs.value.trim();
+  VID.ov = {
+    call:fq.call || (S.ui.swl ? "ÉCOUTE" : "QSO"),
+    who:[F.fName.value.trim(), g && g.prec !== "pays" ? g.label : "", ct ? ct.name : ""].filter(Boolean).join(", "),
+    l2:[f ? String(f).replace(".", ",") + " MHz" : "", b, F.fMode.value].filter(Boolean).join("   "),
+    l3:[rr ? (S.ui.swl ? "Report " : "Reçu ") + rr : "", (!S.ui.swl && rs) ? "Donné " + rs : "", d ? km(d.d) + (d.b !== undefined ? "  " + Math.round(d.b) + "°" : "") : ""].filter(Boolean).join("   "),
+    t1:fDate(l.date) + "  " + fTime(l.time) + ":" + sec + "  " + (HOME && HOME.label ? HOME.label + " " : "") + "(" + fmtOff(l.off) + ")",
+    t2:u.time + ":" + sec + " UTC",
+    me:[st.call || S.settings.mycall || "", st.name || "", lp ? lp.lat.toFixed(5) + ", " + lp.lon.toFixed(5) + " ±" + Math.round(lp.acc) + " m" : (HOME ? llToLoc(HOME.lat, HOME.lon) : "")].filter(Boolean).join("  –  ")
+  };
+  VID.ovT = now;
+  return VID.ov;
+}
+function rrect(ctx, x, y, w, h, r){
+  ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath();
+}
+function fitFont(ctx, text, weight, size, fam, maxW){
+  var sz = size;
+  ctx.font = weight + " " + sz + "px " + fam;
+  while (sz > 9 && ctx.measureText(text).width > maxW) { sz -= 1; ctx.font = weight + " " + sz + "px " + fam; }
+  return sz;
+}
+function drawOverlay(ctx, w, h){
+  var o = ovInfo(), m = Math.min(w, h), pad = Math.round(m * 0.028), fs = Math.max(13, Math.round(m * 0.042));
+  var mono = '"JetBrains Mono", ui-monospace, Menlo, Consolas, monospace', sans = 'Barlow, system-ui, -apple-system, Roboto, sans-serif';
+  var maxW = w - pad * 4;
+  ctx.save(); ctx.textBaseline = "top";
+  var lines = [o.who, o.l2, o.l3].filter(Boolean);
+  var cfs = fitFont(ctx, o.call, "700", Math.round(fs * 1.55), mono, maxW), w1 = ctx.measureText(o.call).width;
+  ctx.font = "600 " + fs + "px " + sans;
+  var w2 = 0; lines.forEach(function(t){ w2 = Math.max(w2, Math.min(maxW, ctx.measureText(t).width)); });
+  var bw = Math.max(w1, w2) + pad * 1.6, bh = cfs * 1.2 + lines.length * fs * 1.32 + pad * 1.1;
+  ctx.fillStyle = "rgba(0,0,0,0.55)"; rrect(ctx, pad, pad, bw, bh, Math.round(fs * 0.45)); ctx.fill();
+  var x = pad + pad * 0.8, y = pad + pad * 0.55;
+  ctx.fillStyle = "#3CE0B5"; ctx.font = "700 " + cfs + "px " + mono; ctx.fillText(o.call, x, y); y += cfs * 1.2;
+  ctx.fillStyle = "#FFFFFF";
+  lines.forEach(function(t){ var sz = fitFont(ctx, t, "600", fs, sans, maxW); ctx.fillText(t, x, y); y += fs * 1.32; });
+  var bl = [o.t1, o.t2, o.me].filter(Boolean), fs2 = Math.max(11, Math.round(fs * 0.72)), bh2 = bl.length * fs2 * 1.38 + pad * 0.9;
+  ctx.fillStyle = "rgba(0,0,0,0.55)"; ctx.fillRect(0, h - bh2, w, bh2);
+  ctx.fillStyle = "#FFFFFF";
+  var yy = h - bh2 + pad * 0.45;
+  bl.forEach(function(t){ fitFont(ctx, t, "500", fs2, mono, w - pad * 2); ctx.fillText(t, pad, yy); yy += fs2 * 1.38; });
+  ctx.restore();
+}
+function vidElapsed(){ var now = VID.pauseAt || Date.now(); return Math.max(0, Math.floor((now - VID.t0 - VID.paused) / 1000)); }
 function fmtDur(s){ return ("0" + Math.floor(s / 60)).slice(-2) + ":" + ("0" + (s % 60)).slice(-2); }
 function recToggle(){
-  if (VID.rec && VID.rec.state === "recording") { VID.rec.stop(); return; }
+  if (VID.rec && (VID.rec.state === "recording" || VID.rec.state === "paused")) { VID.rec.stop(); return; }
   if (!VID.stream) { startCam(); return; }
-  var mime = vidMime(), rec;
-  try { rec = mime ? new MediaRecorder(VID.stream, {mimeType:mime, videoBitsPerSecond:2500000}) : new MediaRecorder(VID.stream); }
-  catch (e) { try { rec = new MediaRecorder(VID.stream); } catch (e2) { vidMsg("Enregistrement impossible sur ce navigateur."); return; } }
-  VID.rec = rec; VID.chunks = []; VID.mime = rec.mimeType || mime || "video/webm";
-  rec.ondataavailable = function(ev){ if (ev.data && ev.data.size) VID.chunks.push(ev.data); };
+  var src = VID.stream;
+  if (overlayOn()) {
+    try { VID.cs = $("vidCanvas").captureStream(30); src = new MediaStream(VID.cs.getVideoTracks().concat(VID.stream.getAudioTracks())); }
+    catch (e) { VID.cs = null; src = VID.stream; }
+  }
+  var mime = vidMime(), rec, br = (VQ[VID.q] || VQ["720"])[2];
+  try { rec = mime ? new MediaRecorder(src, {mimeType:mime, videoBitsPerSecond:br}) : new MediaRecorder(src); }
+  catch (e) { try { rec = new MediaRecorder(src); } catch (e2) { vidMsg("Enregistrement impossible sur ce navigateur."); return; } }
+  VID.rec = rec; VID.chunks = []; VID.size = 0; VID.marks = []; VID.paused = 0; VID.pauseAt = 0;
+  VID.mime = rec.mimeType || mime || "video/webm";
+  rec.ondataavailable = function(ev){ if (ev.data && ev.data.size) { VID.chunks.push(ev.data); VID.size += ev.data.size; } };
   rec.onstop = function(){
-    clearInterval(VID.timer);
+    clearInterval(VID.timer); relWake();
     setBlob(new Blob(VID.chunks, {type:VID.mime.split(";")[0]}));
     VID.rec = null;
     stopStream();
+    renderMarks();
   };
   rec.start(1000);
   VID.t0 = Date.now();
-  $("recTime").textContent = "00:00";
-  VID.timer = setInterval(function(){ $("recTime").textContent = fmtDur(Math.floor((Date.now() - VID.t0) / 1000)); }, 500);
+  $("recTime").textContent = "00:00"; $("recSize").textContent = "";
+  VID.timer = setInterval(function(){
+    $("recTime").textContent = fmtDur(vidElapsed());
+    $("recSize").textContent = VID.size ? (VID.size / 1048576).toFixed(1) + " Mo" : "";
+  }, 500);
+  if (navigator.wakeLock && navigator.wakeLock.request) navigator.wakeLock.request("screen").then(function(l){ VID.wake = l; }).catch(function(){});
+  renderMarks();
   vidState("rec");
+}
+function vidPauseToggle(){
+  if (!VID.rec) return;
+  if (VID.rec.state === "recording") { VID.rec.pause(); VID.pauseAt = Date.now(); vidState("pause"); }
+  else if (VID.rec.state === "paused") { VID.paused += Date.now() - VID.pauseAt; VID.pauseAt = 0; VID.rec.resume(); vidState("rec"); }
+}
+function vidMark(){
+  var t = fmtDur(vidElapsed());
+  VID.marks.push(t);
+  $("vidMark").textContent = "Repère (" + VID.marks.length + ")";
+  toast("Repère noté à " + t);
+  renderMarks();
+}
+function renderMarks(){ var e = $("vidMarks"); e.hidden = !VID.marks.length; e.textContent = "Repères : " + VID.marks.join(", "); }
+function dataUrlBlob(u){
+  var parts = u.split(","), mime = (parts[0].match(/:(.*?);/) || [0, "image/jpeg"])[1], bin = atob(parts[1]), arr = new Uint8Array(bin.length);
+  for (var i = 0; i < bin.length; i++) arr[i] = bin.charCodeAt(i);
+  return new Blob([arr], {type:mime});
+}
+function vidPhoto(){
+  var v = $("vidLive"); if (!v.videoWidth) return;
+  var c = document.createElement("canvas"); c.width = v.videoWidth; c.height = v.videoHeight;
+  var ctx = c.getContext("2d"); ctx.drawImage(v, 0, 0, c.width, c.height);
+  if ($("vidOverlay").checked) { VID.ovT = 0; drawOverlay(ctx, c.width, c.height); }
+  var l = nowIn(formZone());
+  var flash = $("vidMsg"); flash.textContent = ""; 
+  saveAs(dataUrlBlob(c.toDataURL("image/jpeg", 0.92)), "QSO_" + vidCallName() + "_" + l.date + "-" + l.time + "_photo.jpg", "image/jpeg").then(function(n){ if (n) toast("Photo enregistrée"); });
+}
+function vidTorch(){
+  var tr = VID.stream && VID.stream.getVideoTracks()[0]; if (!tr) return;
+  var want = !VID.torch;
+  tr.applyConstraints({advanced:[{torch:want}]}).then(function(){ VID.torch = want; $("vidTorch").setAttribute("aria-pressed", String(want)); $("vidTorch").classList.toggle("on", want); }).catch(function(){ toast("Lampe non disponible"); });
 }
 function setBlob(b){
   VID.blob = b; VID.saved = false;
@@ -2298,7 +2614,7 @@ function setBlob(b){
   VID.url = URL.createObjectURL(b);
   var p = $("vidPlay"); p.src = VID.url;
   vidState("done");
-  $("vidNote").textContent = "Vidéo prête (" + (b.size / 1048576).toFixed(1) + " Mo). Enregistre-la avant de fermer : elle n\u2019est pas gardée dans le carnet, seul son nom de fichier l\u2019est.";
+  $("vidNote").textContent = "Vidéo prête (" + (b.size / 1048576).toFixed(1) + " Mo). Enregistre-la avant de fermer : le carnet garde seulement son nom de fichier" + (VID.marks.length ? " et les repères" : "") + ".";
 }
 function vidExt(){ var t = (VID.blob && VID.blob.type) || VID.mime || ""; return /mp4/.test(t) ? "mp4" : /quicktime|mov/.test(t) ? "mov" : "webm"; }
 function vidSave(){
@@ -2306,17 +2622,22 @@ function vidSave(){
   var l = nowIn(formZone()), ext = vidExt();
   var name = "QSO_" + vidCallName() + "_" + l.date + "-" + l.time + "." + ext;
   var type = VID.blob.type || (ext === "mp4" ? "video/mp4" : "video/webm");
-  saveAs(VID.blob, name, type, ext === "mov" ? name.replace(/\.mov$/, ".mp4") : null).then(function(saved){
+  saveAs(VID.blob, name, type).then(function(saved){
     if (!saved) return;
     VID.saved = true;
     curVideo = saved; showAttach();
-    if (editId && S.qsos[editId]) toast("Vidéo enregistrée. Valide le QSO pour l\u2019y rattacher.");
+    if (VID.marks.length) {
+      var tag = "Repères vidéo " + VID.marks.join(", ");
+      if (F.fNote.value.indexOf(tag) < 0) F.fNote.value = (F.fNote.value.trim() ? F.fNote.value.trim() + " – " : "") + tag;
+    }
+    toast(editId ? "Vidéo enregistrée : valide le QSO pour l\u2019y rattacher" : "Vidéo enregistrée et rattachée au QSO en cours");
   });
 }
 function vidReset(){
   if (VID.url) URL.revokeObjectURL(VID.url);
-  VID.blob = null; VID.url = ""; VID.saved = false;
+  VID.blob = null; VID.url = ""; VID.saved = false; VID.marks = [];
   $("vidPlay").removeAttribute("src");
+  renderMarks();
   $("vidNote").textContent = "La vidéo reste sur ton appareil : rien n\u2019est envoyé en ligne.";
 }
 function closeVideo(force){
@@ -2324,7 +2645,8 @@ function closeVideo(force){
     var b = $("vidClose");
     if (b.getAttribute("data-armed") !== "1") { b.setAttribute("data-armed", "1"); toast("Vidéo non enregistrée : appuie encore sur ✕ pour la jeter"); return; }
   }
-  if (VID.rec && VID.rec.state === "recording") { VID.rec.onstop = null; VID.rec.stop(); clearInterval(VID.timer); VID.rec = null; }
+  if (VID.rec && (VID.rec.state === "recording" || VID.rec.state === "paused")) { VID.rec.onstop = null; try { VID.rec.stop(); } catch (e) {} clearInterval(VID.timer); VID.rec = null; }
+  relWake();
   stopStream();
   if (force || VID.saved || !VID.blob || $("vidClose").getAttribute("data-armed") === "1") vidReset();
   $("videoSheet").hidden = true;
@@ -2481,9 +2803,10 @@ function updateHomeNote(){
 function renderStationBar(){
   var sel = $("fStation"), l = stations(), a = activeSt();
   sel.innerHTML = l.map(function(st){ return '<option value="' + esc(st.id) + '"' + (st.id === a.id ? " selected" : "") + '>' + esc(st.name || "Station") + (st.qth ? " – " + esc(st.qth) : "") + '</option>'; }).join("");
-  $("btnHere").hidden = a.kind !== "mobile";
-  var p = stPos(a);
-  $("stInfo").textContent = p ? p.label + ", " + (p.zone.approx ? "≈ " : "") + fmtOff(nowIn(p.zone).off) : "lieu à préciser";
+  $("btnHere").hidden = a.kind !== "mobile" || GEO_W !== null;
+  var p = stPos(a), gps = "";
+  if (a.kind === "mobile") gps = livePos() ? "GPS ±" + Math.round(livePos().acc) + " m" : (GEO_W !== null ? "GPS en recherche…" : (GPS_DENIED ? "GPS refusé" : ""));
+  $("stInfo").textContent = (p ? p.label + ", " + (p.zone.approx ? "≈ " : "") + fmtOff(nowIn(p.zone).off) : "lieu à préciser") + (gps ? " – " + gps : "");
 }
 function renderStEditor(){
   $("stList").innerHTML = STW.map(function(st, i){
@@ -2532,6 +2855,7 @@ function switchStation(id){
   var utc = keep ? localToUtc(F.fDate.value.replace(/-/g, ""), F.fTime.value.replace(":", ""), oldZ) : null;
   S.settings.active = id;
   saveSettingsCloud();
+  stopGps(); syncGps();
   refresh(); applySettingsUI();
   F.fPwr.value = activeSt().pwr || F.fPwr.value;
   if (utc) { var l = utcToLocal(utc.date, utc.time, formZone()); F.fDate.value = l.date.slice(0,4) + "-" + l.date.slice(4,6) + "-" + l.date.slice(6,8); F.fTime.value = fTime(l.time); }
@@ -2718,7 +3042,7 @@ Array.prototype.forEach.call(document.querySelectorAll(".bottomnav button"), fun
   b.addEventListener("click", function(){ setView(this.getAttribute("data-view")); });
 });
 $("fStation").addEventListener("change", function(){ switchStation(this.value); });
-$("btnHere").addEventListener("click", function(){ var st = activeSt(); gpsTo(st, function(){ saveSettingsCloud(); refresh(); applySettingsUI(); updateTon(); }); });
+$("btnHere").addEventListener("click", function(){ GPS_DENIED = false; syncGps(); if (GEO_W !== null) return; var st = activeSt(); gpsTo(st, function(){ saveSettingsCloud(); refresh(); applySettingsUI(); updateTon(); }); });
 $("btnTimeMode").addEventListener("click", function(){ setTimeMode(S.ui.timeMode === "utc" ? "local" : "utc"); });
 if (window.matchMedia) { var mq = window.matchMedia("(prefers-color-scheme: dark)"); if (mq.addEventListener) mq.addEventListener("change", function(){ if (chart) renderMap(false); }); }
 $("btnWipe").addEventListener("click", wipeAll);
@@ -2729,7 +3053,13 @@ $("btnVideo").addEventListener("click", openVideo);
 $("vidClose").addEventListener("click", function(){ closeVideo(false); });
 $("vidRec").addEventListener("click", recToggle);
 $("vidFlip").addEventListener("click", function(){ VID.facing = VID.facing === "user" ? "environment" : "user"; $("vidNative").setAttribute("capture", VID.facing); startCam(); });
-$("vidRetake").addEventListener("click", function(){ vidReset(); if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia && vidMime() !== null) startCam(); else { vidState("error"); vidMsg("Utilise « Filmer avec l\u2019appareil photo »."); $("vidNativeLbl").hidden = false; } });
+$("vidPause").addEventListener("click", vidPauseToggle);
+$("vidMark").addEventListener("click", vidMark);
+$("vidPhoto").addEventListener("click", vidPhoto);
+$("vidTorch").addEventListener("click", vidTorch);
+$("vidOverlay").addEventListener("change", function(){ S.ui.vidOv = this.checked; saveLocal(); vidState(VID.st); });
+$("vidQuality").addEventListener("change", function(){ VID.q = this.value; S.ui.vidQ = this.value; saveLocal(); if (VID.stream && !VID.rec) startCam(); });
+$("vidRetake").addEventListener("click", function(){ vidReset(); if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia && vidMime() !== null) startCam(); else { vidState("error"); vidMsg("Utilise « Appli caméra »."); $("vidNativeLbl").hidden = false; } });
 $("vidSave").addEventListener("click", vidSave);
 $("vidNative").addEventListener("change", function(){
   var f = this.files && this.files[0]; if (!f) return;
@@ -2763,7 +3093,12 @@ $("btnTimeMode").textContent = S.ui.timeMode === "utc" ? "UTC" : "Heure locale";
 refresh();
 updateTon();
 showTab(S.ui.tab === "map" ? "map" : "log");
+setView(S.ui.view === "log" || S.ui.view === "map" ? S.ui.view : "entry");
+if (!isNarrow()) showTab(S.ui.tab === "map" ? "map" : "log");
+if (window.matchMedia) { var mqn = window.matchMedia("(max-width: 999px)"); var onN = function(){ if (!isNarrow()) showTab(S.ui.tab === "map" ? "map" : "log"); if (chart) setTimeout(function(){ chart.resize(); }, 60); }; if (mqn.addEventListener) mqn.addEventListener("change", onN); }
 tick(); setInterval(tick, 1000);
+syncGps();
+document.addEventListener("visibilitychange", function(){ if (document.hidden) { if (!(VID.rec)) stopGps(true); } else syncGps(); });
 if (!HOME) toggleSettings(true); else if (!isNarrow()) F.fCall.focus();
 initCloud();
 initPwa();
