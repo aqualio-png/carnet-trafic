@@ -341,6 +341,14 @@ body:not(.swl) .swl-only{display:none !important}
 .instbody .ico{display:inline-block;vertical-align:-3px;width:18px;height:18px}
 .instbody .ok{background:var(--accent-soft);color:var(--accent);border-radius:9px;padding:10px 12px;font-weight:600}
 @media (display-mode: standalone){ .top{padding-top:8px} }
+.diag{margin-top:14px;border-top:1px solid var(--line);padding-top:10px}
+.diaglist{list-style:none;margin:0 0 8px;padding:0;font-size:.88rem}
+.diaglist li{display:flex;gap:8px;align-items:baseline;padding:3px 0}
+.diaglist li span{font-weight:700;width:1.1em;text-align:center}
+.diaglist li.ok span{color:var(--accent)}
+.diaglist li.ko{color:var(--bad)}
+.diaglist code{font-family:var(--mono);font-size:.78rem;color:var(--muted);margin-left:auto}
+.warnmsg{background:var(--bad-bg);color:var(--bad);border-radius:9px;padding:9px 11px;font-size:.88rem;margin:6px 0 0}
 </style>
 </head>
 <body data-view="entry">
@@ -1956,7 +1964,7 @@ function showTab(t){
   $("tabMap").setAttribute("aria-selected", String(t === "map"));
   $("panelLog").hidden = t !== "log";
   $("panelMap").hidden = t !== "map";
-  if (isNarrow() && S.ui.view !== t && S.ui.view !== "entry") { S.ui.view = t; document.body.setAttribute("data-view", t); }
+  if (isNarrow() && S.ui.view && S.ui.view !== t && S.ui.view !== "entry") { S.ui.view = t; document.body.setAttribute("data-view", t); }
   if (t === "map") { ensureMap(); if (chart) setTimeout(function(){ chart.resize(); }, 40); }
 }
 /* ---------- Export ---------- */
@@ -2358,8 +2366,10 @@ function openInstall(){
       '<p class="note-small">Firefox sur ordinateur ne sait pas installer les applications web : utilise Chrome ou Edge pour l\u2019installation.</p>';
   }
   h += '<p class="note-small" style="margin-top:14px">Une fois installé, le carnet fonctionne sans Internet. Seul le fond de la carte a besoin d\u2019avoir été affiché une première fois en ligne. Tes fiches restent dans l\u2019appareil : utilise « Enregistrer sous… » pour les sauvegarder ou les passer d\u2019un appareil à l\u2019autre.</p>';
+  if (web && !inClaude()) h += '<div class="diag" id="instDiag"><p class="plat">Vérification de la mise en ligne…</p></div>';
   $("instBody").innerHTML = h;
   $("installSheet").hidden = false;
+  if (web && !inClaude()) checkOnline();
   var g = $("instGo");
   if (g) g.addEventListener("click", function(){
     var ev = installEvt; installEvt = null;
@@ -2367,12 +2377,35 @@ function openInstall(){
     ev.userChoice.then(function(c){ $("installSheet").hidden = true; if (c && c.outcome === "accepted") toast("Carnet installé"); });
   });
 }
+var PWA_FILES = [["manifest.webmanifest", "Fiche d\u2019installation"], ["sw.js", "Fonctionnement hors ligne"], ["icons/icon-192.png", "Icône"],
+  ["icons/icon-512.png", "Grande icône"], ["icons/icon-maskable-512.png", "Icône Android"], ["icons/apple-touch-icon.png", "Icône iPhone et iPad"]];
+function checkOnline(){
+  var box = $("instDiag"); if (!box) return;
+  Promise.all(PWA_FILES.map(function(f){
+    return fetch(f[0] + "?v=" + Date.now(), {cache:"no-store"}).then(function(r){ return r.ok; }, function(){ return null; });
+  })).then(function(res){
+    var off = res.every(function(x){ return x === null; });
+    var miss = PWA_FILES.filter(function(f, i){ return res[i] === false; });
+    var swOn = !!(navigator.serviceWorker && navigator.serviceWorker.controller);
+    var h = '<p class="plat">Mise en ligne</p><ul class="diaglist">' + PWA_FILES.map(function(f, i){
+      var st = res[i] === true ? "ok" : res[i] === false ? "ko" : "na";
+      return '<li class="' + st + '"><span>' + (st === "ok" ? "✓" : st === "ko" ? "✗" : "–") + '</span>' + f[1] + ' <code>' + f[0] + '</code></li>';
+    }).join("") + '<li class="' + (swOn ? "ok" : "na") + '"><span>' + (swOn ? "✓" : "…") + '</span>Hors ligne ' + (swOn ? "actif" : "en préparation (relance la page une fois)") + '</li></ul>';
+    if (off) h += '<p class="note-small">Pas de connexion : vérification impossible pour l\u2019instant.</p>';
+    else if (miss.length) h += '<p class="warnmsg">Il manque ' + miss.length + ' fichier' + (miss.length > 1 ? "s" : "") + ' sur ton site : dépose-' + (miss.length > 1 ? "les" : "le") + ' dans le dépôt GitHub, au même niveau que index.html (le dossier <code>icons</code> compris). Sans eux, le carnet ne peut pas s\u2019installer.</p>';
+    else h += '<p class="note-small">Tout est en place : le carnet peut s\u2019installer sur ce support.</p>';
+    box.innerHTML = h;
+  });
+}
 window.addEventListener("beforeinstallprompt", function(e){ e.preventDefault(); installEvt = e; });
 window.addEventListener("appinstalled", function(){ installEvt = null; toast("Carnet installé : retrouve-le avec les autres applis"); });
 function initPwa(){
   if (isStandalone()) document.documentElement.classList.add("standalone");
   if ("serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost") && !inClaude()) {
+    var hadCtl = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener("controllerchange", function(){ if (hadCtl) toast("Mise à jour du carnet installée"); hadCtl = true; });
     navigator.serviceWorker.register("sw.js").then(function(reg){
+      if (reg.update) setTimeout(function(){ reg.update().catch(function(){}); }, 4000);
       var urls = ["https://cdn.jsdelivr.net/npm/echarts@4.9.0/dist/echarts.min.js", "https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/js/world.js"];
       var send = function(w){ if (w) w.postMessage({type:"precache-map", urls:urls}); };
       if (reg.active) send(reg.active);
