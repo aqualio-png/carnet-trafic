@@ -383,6 +383,47 @@ body{overflow-x:hidden}
 .recbadge{left:auto;right:10px;top:30px}
 .vumeter{top:12px}
 @media (max-width:1499px){.entry .actions kbd{display:none}}
+.pstate{font-size:.82rem;color:var(--muted)}
+.propbody{padding:0 16px 16px}
+.pidx{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-bottom:12px}
+@media (max-width:560px){.pidx{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pi{background:var(--sunk);border-radius:10px;padding:8px 10px;border-left:4px solid var(--line)}
+.pi.g{border-left-color:var(--accent)} .pi.m{border-left-color:var(--warn)} .pi.b{border-left-color:var(--bad)}
+.pi span{display:block;font-size:.74rem;color:var(--muted)} .pi b{font-family:var(--mono);font-size:1.25rem} .pi small{display:block;font-size:.78rem;color:var(--muted)}
+.palerts{margin:0 0 10px}
+.pa{margin:0 0 6px;padding:8px 11px;border-radius:9px;font-size:.88rem;font-weight:600}
+.pa.b{background:var(--bad-bg);color:var(--bad)} .pa.m{background:var(--warn-bg);color:var(--warn)}
+.pverdict{font-size:1rem;font-weight:600;margin:4px 0 12px;padding:10px 12px;background:var(--accent-soft);border-radius:10px}
+.ph{font-size:.95rem;margin:16px 0 8px}
+.pgridwrap{overflow-x:auto;border:1px solid var(--line2);border-radius:10px}
+.pgrid{border-collapse:collapse;font-size:.72rem;width:100%;min-width:640px}
+.pgrid th{font-weight:600;color:var(--muted);padding:3px 2px;font-family:var(--mono)}
+.pgrid tbody th{text-align:left;font-family:var(--sans);color:var(--ink);white-space:nowrap;padding:4px 8px;position:sticky;left:0;background:var(--surface);z-index:1;font-size:.8rem}
+.pgrid tbody th small{display:block;color:var(--muted);font-weight:500;font-size:.68rem}
+.pgrid td{height:28px;min-width:20px;text-align:center;font-weight:700;color:rgba(0,0,0,.55);border:1px solid var(--surface)}
+.l0{background:var(--sunk)} .l1{background:color-mix(in srgb,var(--accent) 22%,var(--surface))} .l2{background:color-mix(in srgb,var(--accent) 52%,var(--surface))} .l3{background:var(--accent)}
+.plegend{font-size:.8rem;color:var(--muted);margin:6px 0 0;display:flex;flex-wrap:wrap;gap:4px 10px;align-items:center}
+.plegend i{display:inline-block;width:14px;height:14px;border-radius:3px;vertical-align:-2px;margin-right:3px}
+.pcal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px}
+.pc{border-radius:8px;padding:5px 4px;text-align:center;font-size:.72rem;line-height:1.25}
+.pc b{display:block;font-size:.72rem} .pc span{display:block;font-family:var(--mono);font-size:.9rem;font-weight:700} .pc small{opacity:.8}
+.pc.l3{color:var(--accent-ink)}
+.pwx{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px}
+@media (max-width:560px){.pwx{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.pwx div{background:var(--sunk);border-radius:9px;padding:7px 9px} .pwx span{display:block;font-size:.74rem;color:var(--muted)} .pwx b{font-family:var(--mono)}
+.pbars{display:flex;align-items:flex-end;gap:2px;height:70px;border-bottom:1px solid var(--line);margin-top:6px}
+.pbars i{flex:1;background:var(--accent);border-radius:3px 3px 0 0;min-height:1px;position:relative}
+.pbars.m{height:60px;margin-top:14px}
+.pbars.m i em{position:absolute;bottom:-17px;left:0;right:0;text-align:center;font-style:normal;font-size:.68rem;color:var(--muted)}
+.paxis{display:flex;justify-content:space-between;font-size:.68rem;color:var(--muted);margin:2px 0 0}
+.pnote{font-size:.78rem;color:var(--muted);margin:18px 0 0;border-top:1px solid var(--line2);padding-top:10px}
+.vidgain{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:0 14px 10px;font-size:.88rem}
+.vidgain label[for]{font-weight:600}
+.vidgain input[type=range]{flex:1;min-width:140px;accent-color:var(--accent)}
+.vidgain b{font-family:var(--mono);min-width:4.5em}
+.vidgain .switch{display:inline-flex;gap:6px;align-items:center;font-weight:600}
+@media (max-width:999px){.bottomnav button{font-size:.7rem}}
+@media (max-width:640px){.pverdict{font-size:.92rem}.ph{font-size:.9rem}}
 </style>
 </head>
 <body data-view="entry">
@@ -536,6 +577,7 @@ body{overflow-x:hidden}
         <div class="tabs" role="tablist">
           <button role="tab" id="tabLog" aria-selected="true" aria-controls="panelLog">Journal</button>
           <button role="tab" id="tabMap" aria-selected="false" aria-controls="panelMap">Carte</button>
+          <button role="tab" id="tabProp" aria-selected="false" aria-controls="panelProp">Propagation</button>
         </div>
         <div class="stats" id="stats"></div>
       </div>
@@ -567,6 +609,14 @@ body{overflow-x:hidden}
         <div class="mappick" id="mapPick" hidden></div>
         <div class="mapinfo" id="mapInfo"></div>
       </div>
+    <div id="panelProp" role="tabpanel" hidden>
+        <div class="maptools">
+          <label class="qsel">Bande <select id="propBand"></select></label>
+          <button class="btn" id="propRefresh">Actualiser</button>
+          <span class="pstate" id="propState"></span>
+        </div>
+        <div class="propbody" id="propBody"></div>
+      </div>
     </section>
   </div>
 </main>
@@ -575,6 +625,7 @@ body{overflow-x:hidden}
   <button data-view="entry" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>Saisie</button>
   <button data-view="log"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>Journal</button>
   <button data-view="map"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4L3 6v14l6-2 6 2 6-2V4l-6 2z"/><path d="M9 4v14M15 6v14"/></svg>Carte</button>
+  <button data-view="prop"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.5v2.5M12 19v2.5M2.5 12H5M19 12h2.5M5.3 5.3l1.8 1.8M16.9 16.9l1.8 1.8M5.3 18.7l1.8-1.8M16.9 7.1l1.8-1.8"/></svg>Propag.</button>
 </nav>
 
 <div class="sheet" id="videoSheet" role="dialog" aria-modal="true" aria-labelledby="vidTitle" hidden>
@@ -605,10 +656,19 @@ body{overflow-x:hidden}
     </div>
     <div class="vidopts" id="vidOpts">
       <label class="switch"><input type="checkbox" id="vidOverlay" checked><span>Incruster les infos du QSO</span></label>
+      <label class="qsel">Micro <select id="vidMic"><option value="">Par défaut</option></select></label>
+      <label class="switch"><input type="checkbox" id="vidAgc"><span>Réglage auto du micro</span></label>
+      <label class="switch"><input type="checkbox" id="vidNs"><span>Réduction de bruit</span></label>
       <label class="qsel">Qualité <select id="vidQuality"><option value="480">480p (léger)</option><option value="720" selected>720p</option><option value="1080">1080p</option></select></label>
       <button class="btn small" id="vidFlip" hidden>Changer de caméra</button>
       <label class="btn small" id="vidNativeLbl" for="vidNative">Appli caméra</label>
       <input type="file" id="vidNative" accept="video/*" capture="environment" class="sr" tabindex="-1">
+    </div>
+    <div class="vidgain" id="vidGainRow" hidden>
+      <label for="vidGain">Volume du son</label>
+      <input type="range" id="vidGain" min="0" max="24" step="1" value="12">
+      <b id="vidGainVal">+12 dB</b>
+      <label class="switch"><input type="checkbox" id="vidLim" checked><span>Limiteur</span></label>
     </div>
     <p class="vidnote vidmarks" id="vidMarks" hidden></p>
     <p class="vidnote" id="vidNote">La vidéo reste sur ton appareil : rien n’est envoyé en ligne.</p>
@@ -1948,6 +2008,277 @@ function renderLog(){
   }).join("") + (list.length > max ? '<div class="more-rows">' + (list.length - max) + ' QSO plus anciens : affine la recherche pour les voir.</div>' : "");
 }
 
+/* ---------- Propagation : météo spatiale, météo locale et prévision ---------- */
+var PROP = {sw:null, wx:null, t:0, loading:false, band:"", err:{}};
+var PROP_LS = "carnet_prop_v1";
+var PROP_BANDS = [["11m", 27.5, "11 m (CB 27 MHz)"], ["10m", 28.5, "10 m"], ["12m", 24.93, "12 m"], ["15m", 21.2, "15 m"], ["17m", 18.1, "17 m"], ["20m", 14.2, "20 m"], ["6m", 50.1, "6 m"]];
+var PROP_REGIONS = [
+  ["Îles britanniques", 54, -4], ["Scandinavie", 61, 14], ["Péninsule ibérique", 40, -4], ["Italie et Balkans", 43, 17], ["Europe de l\u2019Est", 51, 26],
+  ["Canaries et Madère", 28.5, -16], ["Moyen-Orient", 26, 45], ["Afrique de l\u2019Ouest", 11, -6], ["Afrique australe", -26, 27], ["Océan Indien", -21, 56],
+  ["Antilles", 16, -62], ["Amérique du Nord Est", 41, -75], ["Amérique du Nord Ouest", 37, -118], ["Amérique du Sud", -15, -50], ["Japon et Asie", 36, 135], ["Australie", -30, 145]
+];
+function propLoad(){ try { var o = JSON.parse(localStorage.getItem(PROP_LS) || "null"); if (o) { PROP.sw = o.sw; PROP.wx = o.wx; PROP.t = o.t || 0; } } catch (e) {} }
+function propSave(){ try { localStorage.setItem(PROP_LS, JSON.stringify({sw:PROP.sw, wx:PROP.wx, t:PROP.t})); } catch (e) {} }
+function getJ(u){ return fetch(u, {cache:"no-store"}).then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); }); }
+function getT(u){ return fetch(u, {cache:"no-store"}).then(function(r){ if (!r.ok) throw new Error(r.status); return r.text(); }); }
+/* lit une série NOAA, au format tableau de tableaux (avec entête) ou tableau d'objets */
+function rows(j){
+  if (!Array.isArray(j) || !j.length) return [];
+  if (Array.isArray(j[0])) { var h = j[0].map(String); return j.slice(1).map(function(r){ var o = {}; h.forEach(function(k, i){ o[k] = r[i]; }); return o; }); }
+  return j;
+}
+function pick(o, re){ for (var k in o) if (re.test(k)) return o[k]; return undefined; }
+function tms(v){ if (!v) return NaN; var s = String(v).replace(" ", "T"); if (!/[zZ]|[+-]\d\d:?\d\d$/.test(s)) s += "Z"; return Date.parse(s); }
+function parseKp(j){
+  return rows(j).map(function(o){
+    return {t:tms(pick(o, /time/i)), kp:parseFloat(pick(o, /^kp$|kp_index|estimated_kp|^kp/i)), obs:String(pick(o, /observed/i) || "")};
+  }).filter(function(x){ return !isNaN(x.t) && !isNaN(x.kp); });
+}
+function parseFlux(j){
+  return rows(j).map(function(o){ return {t:tms(pick(o, /time|date/i)), f:parseFloat(pick(o, /flux|f10/i))}; }).filter(function(x){ return !isNaN(x.t) && !isNaN(x.f); });
+}
+function parse27(txt){
+  var M = {Jan:0, Feb:1, Mar:2, Apr:3, May:4, Jun:5, Jul:6, Aug:7, Sep:8, Oct:9, Nov:10, Dec:11}, out = [];
+  String(txt).split(/\r?\n/).forEach(function(l){
+    var m = l.match(/^(\d{4})\s+([A-Z][a-z]{2})\s+(\d{1,2})\s+(\d+)\s+(\d+)\s+(\d+)/);
+    if (m && m[2] in M) out.push({t:Date.UTC(+m[1], M[m[2]], +m[3]), f:+m[4], ap:+m[5], kp:+m[6]});
+  });
+  return out;
+}
+function parse45(j){
+  var r = rows(j && (j.data || j.forecast || j)), out = [];
+  r.forEach(function(o){
+    var t = tms(pick(o, /time|date/i)), f = parseFloat(pick(o, /f10|flux/i)), ap = parseFloat(pick(o, /^ap|ap_/i));
+    if (!isNaN(t) && (!isNaN(f) || !isNaN(ap))) out.push({t:t, f:f, ap:ap});
+  });
+  return out;
+}
+function parseXray(j){
+  return rows(j).filter(function(o){ return /0\.1-0\.8/.test(String(o.energy || "")) || o.energy === undefined; })
+    .map(function(o){ return {t:tms(o.time_tag), f:parseFloat(o.flux)}; }).filter(function(x){ return !isNaN(x.t) && x.f > 0; });
+}
+function xClass(f){
+  if (!f) return "–";
+  var c = f >= 1e-4 ? "X" : f >= 1e-5 ? "M" : f >= 1e-6 ? "C" : f >= 1e-7 ? "B" : "A";
+  var b = {X:1e-4, M:1e-5, C:1e-6, B:1e-7, A:1e-8}[c];
+  return c + (f / b).toFixed(1);
+}
+function propFetch(force){
+  if (PROP.loading) return;
+  if (!force && PROP.t && Date.now() - PROP.t < 20 * 60000) { renderProp(); return; }
+  if (!navigator.onLine) { renderProp(); return; }
+  PROP.loading = true; PROP.err = {}; renderProp();
+  var base = "https://services.swpc.noaa.gov/";
+  var tasks = {
+    kp:getJ(base + "products/noaa-planetary-k-index.json").then(parseKp),
+    kpf:getJ(base + "products/noaa-planetary-k-index-forecast.json").then(parseKp),
+    flux:getJ(base + "products/10cm-flux-30-day.json").then(parseFlux),
+    o27:getT(base + "text/27-day-outlook.txt").then(parse27),
+    o45:getJ(base + "json/45-day-forecast.json").then(parse45),
+    xr:getJ(base + "json/goes/primary/xrays-6-hour.json").then(parseXray)
+  };
+  var keys = Object.keys(tasks), sw = {};
+  var hp = HOME || FIXHOME;
+  var wxP = hp ? getJ("https://api.open-meteo.com/v1/forecast?latitude=" + hp.lat.toFixed(3) + "&longitude=" + hp.lon.toFixed(3) +
+    "&hourly=temperature_2m,relative_humidity_2m,pressure_msl,cape,weather_code,wind_gusts_10m,temperature_850hPa&forecast_days=3&timezone=UTC") : Promise.reject(new Error("position"));
+  Promise.all(keys.map(function(k){ return tasks[k].then(function(v){ sw[k] = v; }, function(){ PROP.err[k] = 1; }); }).concat([
+    wxP.then(function(w){ PROP.wx = {t:Date.now(), lat:hp.lat, lon:hp.lon, h:w.hourly}; }, function(){ PROP.err.wx = 1; })
+  ])).then(function(){
+    var ok = keys.some(function(k){ return sw[k] && sw[k].length; });
+    if (ok) {
+      var old = PROP.sw || {};
+      keys.forEach(function(k){ if (!sw[k] || !sw[k].length) sw[k] = old[k] || []; });
+      PROP.sw = sw; PROP.t = Date.now();
+    }
+    PROP.loading = false; propSave(); renderProp();
+  });
+}
+
+/* --- astronomie et ionosphère (modèle simplifié) --- */
+var RAD = Math.PI / 180;
+function sunElev(lat, lon, ms){
+  var d = (ms - 946728000000) / 86400000;
+  var g = (357.529 + 0.98560028 * d) * RAD, q = 280.459 + 0.98564736 * d;
+  var L = (q + 1.915 * Math.sin(g) + 0.020 * Math.sin(2 * g)) * RAD, e = (23.439 - 0.00000036 * d) * RAD;
+  var dec = Math.asin(Math.sin(e) * Math.sin(L)), ra = Math.atan2(Math.cos(e) * Math.sin(L), Math.cos(L));
+  var gmst = ((18.697374558 + 24.06570982441908 * d) % 24 + 24) % 24;
+  var ha = gmst * 15 * RAD + lon * RAD - ra;
+  return Math.asin(Math.sin(lat * RAD) * Math.sin(dec) + Math.cos(lat * RAD) * Math.cos(dec) * Math.cos(ha)) / RAD;
+}
+function gcPoint(a, b, f){
+  var p1 = a.lat * RAD, l1 = a.lon * RAD, p2 = b.lat * RAD, l2 = b.lon * RAD;
+  var d = 2 * Math.asin(Math.sqrt(Math.pow(Math.sin((p2 - p1) / 2), 2) + Math.cos(p1) * Math.cos(p2) * Math.pow(Math.sin((l2 - l1) / 2), 2)));
+  if (d < 1e-9) return {lat:a.lat, lon:a.lon};
+  var A = Math.sin((1 - f) * d) / Math.sin(d), B = Math.sin(f * d) / Math.sin(d);
+  var x = A * Math.cos(p1) * Math.cos(l1) + B * Math.cos(p2) * Math.cos(l2), y = A * Math.cos(p1) * Math.sin(l1) + B * Math.cos(p2) * Math.sin(l2), z = A * Math.sin(p1) + B * Math.sin(p2);
+  return {lat:Math.atan2(z, Math.sqrt(x * x + y * y)) / RAD, lon:Math.atan2(y, x) / RAD};
+}
+function foF2(pt, ms, sfi){
+  var el = sunElev(pt.lat, pt.lon, ms), cz = Math.max(0, Math.sin(el * RAD));
+  var day = (4 + 0.05 * sfi) * Math.pow(cz, 0.35), night = 2 + 0.02 * sfi;
+  var doy = (ms - Date.UTC(new Date(ms).getUTCFullYear(), 0, 1)) / 86400000;
+  var season = 1 + 0.12 * Math.cos(2 * Math.PI * (doy - 15) / 365) * (pt.lat >= 0 ? 1 : -1) * Math.min(1, Math.abs(pt.lat) / 30);
+  var al = Math.abs(pt.lat), latF = al < 25 ? 1.3 : al > 60 ? 0.8 : 1;
+  return Math.max(night, day * season) * latF;
+}
+function kpF(kp, polar){ var f = kp <= 2 ? 1 : kp < 4 ? 0.92 : kp < 5 ? 0.75 : kp < 6 ? 0.5 : kp < 7 ? 0.3 : 0.15; return polar ? f * f : f; }
+function logistic(x){ return 1 / (1 + Math.exp(-x)); }
+var ES_MONTH = [0.12, 0.06, 0.05, 0.12, 0.55, 1, 0.85, 0.45, 0.15, 0.06, 0.05, 0.2];
+function esProb(pt, ms, fMHz){
+  var mo = new Date(ms).getUTCMonth(), h = (new Date(ms).getUTCHours() + pt.lon / 15 + 24) % 24;
+  var g = function(x, m, s){ var d = Math.min(Math.abs(x - m), 24 - Math.abs(x - m)); return Math.exp(-d * d / (2 * s * s)); };
+  var hf = Math.max(g(h, 11, 2.3), 0.85 * g(h, 19, 2.2)) * 0.9 + 0.1;
+  var ff = fMHz > 40 ? 0.45 : 1;
+  return Math.min(0.95, 0.75 * ES_MONTH[mo] * hf * ff);
+}
+function swAt(ms){
+  var sw = PROP.sw || {}, sfi = 0, kp = 2;
+  var fl = (sw.flux || []).filter(function(x){ return x.t <= ms; });
+  if (fl.length) sfi = fl[fl.length - 1].f;
+  var day = Date.UTC(new Date(ms).getUTCFullYear(), new Date(ms).getUTCMonth(), new Date(ms).getUTCDate());
+  (sw.o27 || []).forEach(function(x){ if (x.t === day) { if (ms > Date.now() + 86400000 || !sfi) sfi = x.f; kp = x.kp; } });
+  if (!sfi) (sw.o45 || []).forEach(function(x){ if (Math.abs(x.t - day) < 43200000 && !isNaN(x.f)) sfi = x.f; });
+  var k1 = (sw.kp || []).concat(sw.kpf || []).filter(function(x){ return Math.abs(x.t + 5400000 - ms) <= 5400000; });
+  if (k1.length) kp = k1[k1.length - 1].kp;
+  return {sfi:sfi || 120, kp:kp, est:!sfi};
+}
+function xrayNow(){ var x = (PROP.sw && PROP.sw.xr) || []; return x.length ? x[x.length - 1] : null; }
+function pathProb(home, reg, ms, fMHz, sw){
+  var tgt = {lat:reg[1], lon:reg[2]}, d = distBrg(home, tgt).d, out = {d:d, mode:"", p:0};
+  var esP = 0, f2P = 0;
+  if (d >= 500 && d < 4300) {
+    var hops = d < 2300 ? 1 : 2, pe = esProb(gcPoint(home, tgt, 0.5), ms, fMHz);
+    esP = hops === 1 ? pe : pe * pe * 0.8;
+  }
+  if (d >= 2300) {
+    var n = Math.ceil(d / 3800), dh = d / n, M = 1 + 2.3 * Math.sin(Math.min(dh, 3800) / 3800 * Math.PI / 2), worst = 1, polar = false;
+    for (var k = 1; k <= n; k++) {
+      var cp = gcPoint(home, tgt, (2 * k - 1) / (2 * n));
+      if (Math.abs(cp.lat) > 55) polar = true;
+      var muf = foF2(cp, ms, sw.sfi) * M;
+      worst = Math.min(worst, logistic((muf - fMHz) / 2.5));
+    }
+    f2P = worst * kpF(sw.kp, polar) * Math.pow(0.93, n - 1);
+    var xr = xrayNow();
+    if (xr && xr.f >= 1e-5 && Math.abs(ms - Date.now()) < 3600000 && sunElev(tgt.lat, tgt.lon, ms) > 0) f2P *= 0.4;
+  }
+  if (f2P >= esP) { out.p = f2P; out.mode = "F2"; } else { out.p = esP; out.mode = "Es"; }
+  return out;
+}
+function propBand(){
+  var b = S.ui.propBand;
+  if (!b) { var cb = curBand(); b = PROP_BANDS.some(function(x){ return x[0] === cb; }) ? cb : "11m"; }
+  for (var i = 0; i < PROP_BANDS.length; i++) if (PROP_BANDS[i][0] === b) return PROP_BANDS[i];
+  return PROP_BANDS[0];
+}
+function lvl(p){ return p >= 0.6 ? 3 : p >= 0.35 ? 2 : p >= 0.15 ? 1 : 0; }
+var LVL_TXT = ["fermé", "faible", "possible", "bonne"];
+function wxAt(ms){
+  var w = PROP.wx && PROP.wx.h; if (!w || !w.time) return null;
+  var best = -1, bd = 1e15;
+  for (var i = 0; i < w.time.length; i++) { var d = Math.abs(tms(w.time[i]) - ms); if (d < bd) { bd = d; best = i; } }
+  if (best < 0 || bd > 5400000) return null;
+  return {t2:w.temperature_2m[best], rh:w.relative_humidity_2m[best], p:w.pressure_msl[best], cape:w.cape[best], code:w.weather_code[best], gust:w.wind_gusts_10m[best], t850:w.temperature_850hPa ? w.temperature_850hPa[best] : null};
+}
+function tropoIdx(x){
+  if (!x || x.p === null || x.p === undefined) return null;
+  var a = Math.max(0, Math.min(1, (x.p - 1012) / 22)), b = x.t850 === null || x.t850 === undefined ? 0.3 : Math.max(0, Math.min(1, (x.t850 - x.t2 + 7) / 9));
+  return Math.round((0.55 * a + 0.45 * b) * 10);
+}
+
+/* --- affichage --- */
+function hourLbl(ms){ var z = HOME ? HOME.zone : {tz:DEVICE_TZ}, i = utcToLocal(new Date(ms).toISOString().slice(0,10).replace(/-/g, ""), new Date(ms).toISOString().slice(11,16).replace(":", ""), z); return i.time.slice(0,2); }
+function dayLbl(ms){ var d = new Date(ms); return ["dim.","lun.","mar.","mer.","jeu.","ven.","sam."][d.getUTCDay()] + " " + d.getUTCDate(); }
+function renderProp(){
+  var box = $("propBody"); if (!box || $("panelProp").hidden) return;
+  var home = HOME || FIXHOME;
+  var bd = propBand(), fM = bd[1];
+  $("propBand").value = bd[0];
+  var st = $("propState");
+  st.textContent = PROP.loading ? "Mise à jour des données…" : PROP.t ? "Données du " + new Date(PROP.t).toLocaleString("fr-FR", {day:"2-digit", month:"2-digit", hour:"2-digit", minute:"2-digit"}) + (navigator.onLine ? "" : " (hors ligne)") : (navigator.onLine ? "" : "Hors ligne : connecte-toi une première fois pour charger les données.");
+  if (!home) { box.innerHTML = '<p class="empty">Indique la position de ta station dans les réglages pour calculer la propagation.</p>'; return; }
+  if (!PROP.sw) { box.innerHTML = PROP.loading ? '<p class="empty">Chargement des données solaires…</p>' : '<p class="empty">Données solaires indisponibles. ' + (navigator.onLine ? "Le service NOAA ne répond pas, réessaie plus tard." : "Connecte-toi à Internet.") + '</p>'; return; }
+  var now = Date.now(), sw0 = swAt(now), xr = xrayNow();
+  var lastKp = (PROP.sw.kp || []).slice(-1)[0];
+  var h = '';
+  /* indices */
+  var sfiTxt = sw0.sfi >= 150 ? "très bon" : sw0.sfi >= 120 ? "bon" : sw0.sfi >= 95 ? "moyen" : "faible";
+  var kpV = lastKp ? lastKp.kp : sw0.kp, kpTxt = kpV < 3 ? "calme" : kpV < 4 ? "agité" : kpV < 5 ? "actif" : "tempête";
+  var xTxt = xr ? (xr.f >= 1e-4 ? "éruption majeure" : xr.f >= 1e-5 ? "éruption" : "calme") : "";
+  h += '<div class="pidx">' +
+    '<div class="pi ' + (sw0.sfi >= 120 ? "g" : sw0.sfi >= 95 ? "m" : "b") + '"><span>Flux solaire (SFI)</span><b>' + Math.round(sw0.sfi) + '</b><small>' + sfiTxt + '</small></div>' +
+    '<div class="pi ' + (kpV < 3 ? "g" : kpV < 5 ? "m" : "b") + '"><span>Indice Kp</span><b>' + kpV.toFixed(kpV % 1 ? 1 : 0) + '</b><small>' + kpTxt + '</small></div>' +
+    '<div class="pi ' + (!xr || xr.f < 1e-5 ? "g" : xr.f < 1e-4 ? "m" : "b") + '"><span>Rayons X</span><b>' + (xr ? xClass(xr.f) : "–") + '</b><small>' + xTxt + '</small></div>';
+  var wx = wxAt(now), ti = tropoIdx(wx);
+  h += '<div class="pi ' + (wx && (wx.code >= 95 || wx.cape > 1500) ? "b" : "g") + '"><span>Météo locale</span><b>' + (wx ? Math.round(wx.p) + " hPa" : "–") + '</b><small>' + (wx ? (wx.code >= 95 ? "orage" : wx.cape > 1500 ? "instable" : "stable") : "") + '</small></div></div>';
+  /* alertes */
+  var al = [];
+  if (kpV >= 5) al.push(["b", "Tempête géomagnétique (Kp " + kpV + ") : DX lointain très perturbé, surtout vers le nord."]);
+  if (xr && xr.f >= 1e-5) al.push(["b", "Éruption solaire en cours (" + xClass(xr.f) + ") : coupures possibles côté jour pendant une à deux heures."]);
+  var storm = null, gust = null;
+  for (var hh = 0; hh < 24; hh++) { var w2 = wxAt(now + hh * 3600000); if (w2) { if (!storm && (w2.code >= 95 || w2.cape > 1500)) storm = now + hh * 3600000; if (!gust && w2.gust > 70) gust = now + hh * 3600000; } }
+  if (storm) al.push(["b", "Risque d\u2019orage vers " + hourLbl(storm) + " h : bruit fort (QRN) et danger pour le matériel. Débranche l\u2019antenne à l\u2019approche."]);
+  if (gust) al.push(["m", "Rafales de plus de 70 km/h vers " + hourLbl(gust) + " h : vérifie la fixation de l\u2019antenne."]);
+  if (al.length) h += '<div class="palerts">' + al.map(function(a){ return '<p class="pa ' + a[0] + '">' + esc(a[1]) + '</p>'; }).join("") + '</div>';
+  /* grille 24 h */
+  var t0 = now - (now % 3600000), hours = [];
+  for (var i = 0; i < 24; i++) hours.push(t0 + i * 3600000);
+  var swH = hours.map(swAt);
+  var regs = PROP_REGIONS.map(function(r){
+    var cells = hours.map(function(ms, i){ return pathProb(home, r, ms, fM, swH[i]); });
+    var best = cells.reduce(function(a, c, i){ return c.p > a.p ? {p:c.p, i:i} : a; }, {p:0, i:0});
+    return {r:r, cells:cells, best:best, d:cells[0].d};
+  });
+  var openNow = regs.filter(function(x){ return lvl(x.cells[0].p) >= 2; }).sort(function(a, b){ return b.cells[0].p - a.cells[0].p; });
+  var verdict = openNow.length ? "Ouvert maintenant vers : " + openNow.slice(0, 4).map(function(x){ return x.r[0] + " (" + (x.cells[0].mode === "Es" ? "sporadique E" : "F2") + ")"; }).join(", ") + "."
+    : "Pas d\u2019ouverture probable à cette heure sur " + bd[2] + ".";
+  var nextBest = regs.slice().sort(function(a, b){ return b.best.p - a.best.p; }).filter(function(x){ return lvl(x.best.p) >= 2; }).slice(0, 4);
+  if (!openNow.length && nextBest.length) verdict += " Meilleures fenêtres des prochaines 24 h : " + nextBest.map(function(x){ return x.r[0] + " vers " + hourLbl(hours[x.best.i]) + " h"; }).join(", ") + ".";
+  h += '<p class="pverdict">' + esc(verdict) + '</p>';
+  h += '<h3 class="ph">Prochaines 24 heures sur ' + esc(bd[2]) + '</h3><div class="pgridwrap"><table class="pgrid"><thead><tr><th></th>' +
+    hours.map(function(ms){ return '<th>' + hourLbl(ms) + '</th>'; }).join("") + '</tr></thead><tbody>' +
+    regs.sort(function(a, b){ return a.d - b.d; }).map(function(x){
+      return '<tr><th title="' + km(x.d) + '">' + esc(x.r[0]) + '<small>' + km(x.d) + '</small></th>' + x.cells.map(function(c, i){
+        return '<td class="l' + lvl(c.p) + '" title="' + esc(x.r[0] + " à " + hourLbl(hours[i]) + " h : " + LVL_TXT[lvl(c.p)] + " (" + Math.round(c.p * 100) + " %, " + (c.mode === "Es" ? "sporadique E" : "F2") + ")") + '">' + (c.mode === "Es" && lvl(c.p) ? "E" : "") + '</td>';
+      }).join("") + '</tr>';
+    }).join("") + '</tbody></table></div>' +
+    '<p class="plegend"><i class="l3"></i>bonne <i class="l2"></i>possible <i class="l1"></i>faible <i class="l0"></i>fermée <span>E = sporadique E</span></p>';
+  /* calendrier */
+  var cal = (PROP.sw.o27 || []).slice();
+  if (cal.length) {
+    var mfF2 = [0.9, 1, 1, 0.9, 0.7, 0.6, 0.6, 0.7, 0.9, 1, 1, 0.9];
+    h += '<h3 class="ph">Tendance sur 27 jours (prévision NOAA)</h3><div class="pcal">' + cal.map(function(x){
+      var mo = new Date(x.t).getUTCMonth();
+      var dx = logistic((x.f - 115) / 18) * kpF(x.kp, false) * mfF2[mo], es = 0.6 * ES_MONTH[mo];
+      var sc = Math.max(dx, es), l = lvl(sc);
+      return '<div class="pc l' + l + '" title="SFI ' + x.f + ", Ap " + x.ap + ", Kp max " + x.kp + '"><b>' + dayLbl(x.t) + '</b><span>' + x.f + '</span><small>Kp ' + x.kp + '</small></div>';
+    }).join("") + '</div><p class="plegend">Chaque case : flux solaire prévu et Kp maximal. Les couleurs combinent DX lointain (F2) et saison de sporadique E.</p>';
+  }
+  /* météo et tropo */
+  if (wx) {
+    h += '<h3 class="ph">Météo à ta station</h3><div class="pwx">' +
+      '<div><span>Pression</span><b>' + Math.round(wx.p) + ' hPa</b></div><div><span>Température</span><b>' + Math.round(wx.t2) + ' °C</b></div>' +
+      '<div><span>Humidité</span><b>' + Math.round(wx.rh) + ' %</b></div><div><span>Rafales</span><b>' + Math.round(wx.gust) + ' km/h</b></div>' +
+      '<div><span>Indice tropo VHF/UHF</span><b>' + (ti === null ? "–" : ti + "/10") + '</b></div></div>' +
+      '<p class="plegend">L\u2019indice tropo (haute pression, inversion de température) concerne surtout les bandes VHF et UHF, et un peu la portée locale en 27 MHz.</p>';
+  } else if (PROP.err.wx) h += '<p class="plegend">Météo locale indisponible pour le moment.</p>';
+  /* historique perso */
+  var my = SORTED.filter(function(q){ return q.date && q.date.length === 8 && !q.swl; });
+  if (my.length >= 5) {
+    var byH = new Array(24).fill(0), byM = new Array(12).fill(0);
+    my.forEach(function(q){ var l = qLocal(q); byH[+l.time.slice(0,2)]++; byM[+l.date.slice(4,6) - 1]++; });
+    var mxH = Math.max.apply(null, byH), mxM = Math.max.apply(null, byM);
+    var topM = byM.indexOf(mxM), es = my.filter(function(q){ return q._d && q._d.d >= 500 && q._d.d < 2300; }).length;
+    var MN = ["janv.","févr.","mars","avr.","mai","juin","juil.","août","sept.","oct.","nov.","déc."];
+    h += '<h3 class="ph">Ton historique (' + my.length + ' QSO)</h3>' +
+      '<div class="pbars">' + byH.map(function(v, i){ return '<i style="height:' + (mxH ? Math.round(v / mxH * 100) : 0) + '%" title="' + i + ' h : ' + v + ' QSO"></i>'; }).join("") + '</div><p class="paxis"><span>0 h</span><span>6 h</span><span>12 h</span><span>18 h</span><span>23 h</span></p>' +
+      '<div class="pbars m">' + byM.map(function(v, i){ return '<i style="height:' + (mxM ? Math.round(v / mxM * 100) : 0) + '%" title="' + MN[i] + ' : ' + v + ' QSO"><em>' + MN[i].slice(0,1).toUpperCase() + '</em></i>'; }).join("") + '</div>' +
+      '<p class="plegend">Ton mois le plus actif : <b>' + MN[topM] + '</b>. ' + Math.round(es / my.length * 100) + ' % de tes contacts sont entre 500 et 2 300 km, la distance typique de la sporadique E.</p>';
+  }
+  h += '<p class="pnote">Estimation simplifiée à partir des indices NOAA (flux solaire, Kp, rayons X), de l\u2019heure du soleil sur le trajet et de la saison. La sporadique E n\u2019est pas prévisible au jour près : seule sa probabilité saisonnière est affichée. Sources : NOAA SWPC et Open-Meteo.</p>';
+  box.innerHTML = h;
+}
+
 /* ---------- Carte ---------- */
 var chart = null, mapLoading = null, mapPts = [];
 function loadScript(src){
@@ -2110,8 +2441,11 @@ function showTab(t){
   S.ui.tab = t;
   $("tabLog").setAttribute("aria-selected", String(t === "log"));
   $("tabMap").setAttribute("aria-selected", String(t === "map"));
+  $("tabProp").setAttribute("aria-selected", String(t === "prop"));
   $("panelLog").hidden = t !== "log";
   $("panelMap").hidden = t !== "map";
+  $("panelProp").hidden = t !== "prop";
+  if (t === "prop") { renderProp(); propFetch(false); }
   if (isNarrow() && S.ui.view && S.ui.view !== t && S.ui.view !== "entry") { S.ui.view = t; document.body.setAttribute("data-view", t); }
   if (t === "map") { ensureMap(); if (chart) setTimeout(function(){ chart.resize(); if (SEL_FOCUS) focusSel(); }, 60); }
 }
@@ -2379,6 +2713,7 @@ function vidState(st){
   $("recBadge").hidden = !recing;
   $("recBadge").classList.toggle("paused", st === "pause");
   $("vuMeter").hidden = !live || !VID.an;
+  $("vidGainRow").hidden = !live || !VID.gain;
   $("vidRec").hidden = done || st === "error";
   $("vidRec").classList.toggle("on", recing);
   $("vidRec").setAttribute("aria-label", recing ? "Arrêter l\u2019enregistrement" : "Démarrer l\u2019enregistrement");
@@ -2396,7 +2731,7 @@ function vidState(st){
   if (live || done) $("vidMsg").hidden = true;
 }
 function vidMsg(t){ var m = $("vidMsg"); m.textContent = t; m.hidden = false; $("vidLive").hidden = true; $("vidCanvas").hidden = true; }
-function stopVu(){ if (VID.actx) { try { VID.actx.close(); } catch (e) {} } VID.actx = null; VID.an = null; }
+function stopVu(){ if (VID.actx) { try { VID.actx.close(); } catch (e) {} } VID.actx = null; VID.an = null; VID.gain = null; VID.comp = null; VID.dest = null; VID.procTrack = null; }
 function relWake(){ if (VID.wake) { try { VID.wake.release(); } catch (e) {} VID.wake = null; } }
 function stopStream(){
   cancelAnimationFrame(VID.raf); VID.raf = 0;
@@ -2414,6 +2749,8 @@ function openVideo(){
   $("vidTitle").textContent = c ? "Vidéo du QSO avec " + c : "Vidéo du QSO";
   $("videoSheet").hidden = false;
   VID.q = S.ui.vidQ || "720"; $("vidQuality").value = VID.q;
+  $("vidAgc").checked = !!S.ui.vidAgc; $("vidNs").checked = !!S.ui.vidNs; $("vidLim").checked = S.ui.vidLim !== false;
+  $("vidGain").value = gainDb(); $("vidGainVal").textContent = (gainDb() > 0 ? "+" : "") + gainDb() + " dB";
   $("vidOverlay").checked = S.ui.vidOv !== false;
   VID.saved = false; $("vidClose").removeAttribute("data-armed");
   $("vidNative").setAttribute("capture", VID.facing === "user" ? "user" : "environment");
@@ -2431,7 +2768,8 @@ function startCam(){
   vidState("idle"); vidMsg("Ouverture de la caméra…");
   var qd = VQ[VID.q] || VQ["720"];
   var vc = {facingMode:VID.facing, width:{ideal:qd[0]}, height:{ideal:qd[1]}};
-  var ac = {echoCancellation:false, noiseSuppression:false, autoGainControl:false};
+  var ac = {echoCancellation:false, noiseSuppression:!!S.ui.vidNs, autoGainControl:!!S.ui.vidAgc};
+  if (S.ui.vidMic) ac.deviceId = {exact:S.ui.vidMic};
   navigator.mediaDevices.getUserMedia({video:vc, audio:ac}).catch(function(){ return navigator.mediaDevices.getUserMedia({video:{facingMode:VID.facing}, audio:true}); }).then(function(st){
     VID.stream = st;
     var v = $("vidLive"); v.srcObject = st; v.muted = true;
@@ -2445,6 +2783,8 @@ function startCam(){
     if (navigator.mediaDevices.enumerateDevices) navigator.mediaDevices.enumerateDevices().then(function(d){
       VID.multiCam = d.filter(function(x){ return x.kind === "videoinput"; }).length > 1;
       $("vidFlip").hidden = !VID.multiCam;
+      var mics = d.filter(function(x){ return x.kind === "audioinput" && x.deviceId && x.deviceId !== "default"; });
+      $("vidMic").innerHTML = '<option value="">Par défaut</option>' + mics.map(function(m, i){ return '<option value="' + esc(m.deviceId) + '"' + (m.deviceId === S.ui.vidMic ? " selected" : "") + '>' + esc(m.label || ("Micro " + (i + 1))) + '</option>'; }).join("");
     });
   }).catch(function(e){
     vidState("error");
@@ -2455,15 +2795,35 @@ function startCam(){
     else vidMsg("Caméra indisponible (" + (n || "erreur") + ").");
   });
 }
+function gainDb(){ var v = S.ui.vidGain; return v === undefined || v === null ? 12 : +v; }
+function applyGain(){
+  if (!VID.gain || !VID.actx) return;
+  var g = Math.pow(10, gainDb() / 20);
+  try { VID.gain.gain.setTargetAtTime(g, VID.actx.currentTime, 0.05); } catch (e) { VID.gain.gain.value = g; }
+  $("vidGainVal").textContent = (gainDb() > 0 ? "+" : "") + gainDb() + " dB";
+}
+function wireLimiter(){
+  if (!VID.gain || !VID.comp) return;
+  try { VID.gain.disconnect(); VID.comp.disconnect(); } catch (e) {}
+  var outs = [VID.an]; if (VID.dest) outs.push(VID.dest);
+  if (S.ui.vidLim !== false) { VID.gain.connect(VID.comp); outs.forEach(function(o){ VID.comp.connect(o); }); }
+  else outs.forEach(function(o){ VID.gain.connect(o); });
+}
 function startVu(st){
   stopVu();
+  VID.procTrack = null;
   var AC = window.AudioContext || window.webkitAudioContext;
   if (!AC || !st.getAudioTracks().length) return;
   try {
     VID.actx = new AC();
     var src = VID.actx.createMediaStreamSource(st);
+    VID.gain = VID.actx.createGain();
+    VID.comp = VID.actx.createDynamicsCompressor();
+    VID.comp.threshold.value = -10; VID.comp.knee.value = 4; VID.comp.ratio.value = 20; VID.comp.attack.value = 0.002; VID.comp.release.value = 0.2;
     VID.an = VID.actx.createAnalyser(); VID.an.fftSize = 1024;
-    src.connect(VID.an);
+    try { VID.dest = VID.actx.createMediaStreamDestination(); VID.procTrack = VID.dest.stream.getAudioTracks()[0] || null; } catch (e2) { VID.dest = null; }
+    src.connect(VID.gain);
+    wireLimiter(); applyGain();
     VID.vuData = new Uint8Array(VID.an.fftSize);
     if (VID.actx.state === "suspended" && VID.actx.resume) VID.actx.resume();
   } catch (e) { stopVu(); }
@@ -2552,6 +2912,7 @@ function recToggle(){
     try { VID.cs = $("vidCanvas").captureStream(30); src = new MediaStream(VID.cs.getVideoTracks().concat(VID.stream.getAudioTracks())); }
     catch (e) { VID.cs = null; src = VID.stream; }
   }
+  if (VID.procTrack) src = new MediaStream(src.getVideoTracks().concat([VID.procTrack]));
   var mime = vidMime(), rec, br = (VQ[VID.q] || VQ["720"])[2];
   try { rec = mime ? new MediaRecorder(src, {mimeType:mime, videoBitsPerSecond:br}) : new MediaRecorder(src); }
   catch (e) { try { rec = new MediaRecorder(src); } catch (e2) { vidMsg("Enregistrement impossible sur ce navigateur."); return; } }
@@ -2777,7 +3138,7 @@ function setView(v){
   Array.prototype.forEach.call(document.querySelectorAll(".bottomnav button"), function(b){
     if (b.getAttribute("data-view") === v) b.setAttribute("aria-current", "page"); else b.removeAttribute("aria-current");
   });
-  if (v === "log" || v === "map") showTab(v);
+  if (v === "log" || v === "map" || v === "prop") showTab(v);
   if (isNarrow()) window.scrollTo(0, 0);
   saveLocal();
 }
@@ -2944,6 +3305,12 @@ var searchT = null;
 $("logSearch").addEventListener("input", function(){ clearTimeout(searchT); searchT = setTimeout(renderLog, 120); });
 $("tabLog").addEventListener("click", function(){ showTab("log"); saveLocal(); });
 $("tabMap").addEventListener("click", function(){ showTab("map"); saveLocal(); });
+$("tabProp").addEventListener("click", function(){ showTab("prop"); saveLocal(); });
+$("propBand").innerHTML = PROP_BANDS.map(function(b){ return '<option value="' + b[0] + '">' + b[2] + '</option>'; }).join("");
+$("propBand").addEventListener("change", function(){ S.ui.propBand = this.value; saveLocal(); renderProp(); });
+$("propRefresh").addEventListener("click", function(){ propFetch(true); });
+window.addEventListener("online", function(){ if (!$("panelProp").hidden) propFetch(false); });
+setInterval(function(){ if (!$("panelProp").hidden && !document.hidden) { propFetch(false); renderProp(); } }, 5 * 60000);
 $("mapEurope").addEventListener("click", function(){ if (chart) chart.setOption({geo:{center:[HOME ? HOME.lon : 4, HOME ? HOME.lat + 3 : 50], zoom:4.2}}); });
 $("mapWorld").addEventListener("click", function(){ if (chart) chart.setOption({geo:{center:[10, 20], zoom:1}}); });
 $("mapFrance").addEventListener("click", function(){ if (chart) chart.setOption({geo:{center:[2.5, 46.6], zoom:11}}); });
@@ -3058,6 +3425,12 @@ $("vidMark").addEventListener("click", vidMark);
 $("vidPhoto").addEventListener("click", vidPhoto);
 $("vidTorch").addEventListener("click", vidTorch);
 $("vidOverlay").addEventListener("change", function(){ S.ui.vidOv = this.checked; saveLocal(); vidState(VID.st); });
+$("vidGain").addEventListener("input", function(){ S.ui.vidGain = +this.value; applyGain(); });
+$("vidGain").addEventListener("change", saveLocal);
+$("vidLim").addEventListener("change", function(){ S.ui.vidLim = this.checked; saveLocal(); wireLimiter(); });
+$("vidAgc").addEventListener("change", function(){ S.ui.vidAgc = this.checked; saveLocal(); if (VID.stream && !VID.rec) startCam(); });
+$("vidNs").addEventListener("change", function(){ S.ui.vidNs = this.checked; saveLocal(); if (VID.stream && !VID.rec) startCam(); });
+$("vidMic").addEventListener("change", function(){ S.ui.vidMic = this.value; saveLocal(); if (VID.stream && !VID.rec) startCam(); });
 $("vidQuality").addEventListener("change", function(){ VID.q = this.value; S.ui.vidQ = this.value; saveLocal(); if (VID.stream && !VID.rec) startCam(); });
 $("vidRetake").addEventListener("click", function(){ vidReset(); if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia && vidMime() !== null) startCam(); else { vidState("error"); vidMsg("Utilise « Appli caméra »."); $("vidNativeLbl").hidden = false; } });
 $("vidSave").addEventListener("click", vidSave);
@@ -3080,6 +3453,7 @@ function tick(){
 /* ---------- Démarrage ---------- */
 function refresh(){ rebuildIndex(); renderStats(); renderLog(); renderStation(); renderMap(false); updateHomeNote(); renderFixBox(); renderStationBar(); renderBackupBox(); }
 loadLocal();
+propLoad();
 pend.forEach(function(p){ p.busy = false; });
 ensureMode(S.ui.mode);
 F.fMode.value = S.ui.mode || "";
@@ -3092,10 +3466,11 @@ F.fPwr.value = activeSt().pwr || "";
 $("btnTimeMode").textContent = S.ui.timeMode === "utc" ? "UTC" : "Heure locale";
 refresh();
 updateTon();
-showTab(S.ui.tab === "map" ? "map" : "log");
-setView(S.ui.view === "log" || S.ui.view === "map" ? S.ui.view : "entry");
-if (!isNarrow()) showTab(S.ui.tab === "map" ? "map" : "log");
-if (window.matchMedia) { var mqn = window.matchMedia("(max-width: 999px)"); var onN = function(){ if (!isNarrow()) showTab(S.ui.tab === "map" ? "map" : "log"); if (chart) setTimeout(function(){ chart.resize(); }, 60); }; if (mqn.addEventListener) mqn.addEventListener("change", onN); }
+var TABS_OK = {log:1, map:1, prop:1};
+showTab(TABS_OK[S.ui.tab] ? S.ui.tab : "log");
+setView(S.ui.view === "log" || S.ui.view === "map" || S.ui.view === "prop" ? S.ui.view : "entry");
+if (!isNarrow()) showTab(TABS_OK[S.ui.tab] ? S.ui.tab : "log");
+if (window.matchMedia) { var mqn = window.matchMedia("(max-width: 999px)"); var onN = function(){ if (!isNarrow()) showTab(TABS_OK[S.ui.tab] ? S.ui.tab : "log"); if (chart) setTimeout(function(){ chart.resize(); }, 60); }; if (mqn.addEventListener) mqn.addEventListener("change", onN); }
 tick(); setInterval(tick, 1000);
 syncGps();
 document.addEventListener("visibilitychange", function(){ if (document.hidden) { if (!(VID.rec)) stopGps(true); } else syncGps(); });

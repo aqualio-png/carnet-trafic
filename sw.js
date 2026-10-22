@@ -1,5 +1,5 @@
 /* Carnet de trafic : fonctionnement hors ligne */
-var VERSION = "carnet-v8-2026-10-22";
+var VERSION = "carnet-v9-2026-10-22";
 var SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png",
   "./icon-maskable-192.png", "./icon-maskable-512.png", "./apple-touch-icon.png", "./favicon-32.png", "./icon.svg"];
 var RUNTIME = "carnet-ext-v1";
@@ -40,6 +40,11 @@ self.addEventListener("fetch", function(e){
       });
       return hit || net;
     }));
+    return;
+  }
+  /* données de propagation : réseau d'abord, dernière copie si hors ligne */
+  if (url.hostname === "services.swpc.noaa.gov" || url.hostname === "api.open-meteo.com") {
+    e.respondWith(fetch(req).then(function(r){ if (r && r.ok) { var cp = r.clone(); caches.open(RUNTIME).then(function(c){ c.put(req, cp); }); } return r; }).catch(function(){ return caches.match(req); }));
     return;
   }
   /* polices et fond de carte : gardés après le premier chargement */
