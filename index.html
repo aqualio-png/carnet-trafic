@@ -1700,7 +1700,7 @@ function stPos(st){
   if (!st) return null;
   var lp = (st.kind === "mobile" && st.id === activeSt().id) ? livePos() : null;
   if (lp) {
-    var gg = {lat:lp.lat, lon:lp.lon, label:nearestTown(lp.lat, lp.lon) || fmtLoc(llToLoc(lp.lat, lp.lon, locLen(lp.acc))), cc:nearestCountry(lp.lat, lp.lon), gps:true, acc:lp.acc};
+    var gg = {lat:lp.lat, lon:lp.lon, label:liveTownName(lp.lat, lp.lon) || nearestTown(lp.lat, lp.lon, 4) || fmtLoc(llToLoc(lp.lat, lp.lon, locLen(lp.acc))), cc:nearestCountry(lp.lat, lp.lon), gps:true, acc:lp.acc};
     gg.zone = zoneFor(gg.cc ? COUNTRY_BY_NAME[gg.cc] : null, gg.lat, gg.lon, st.tz);
     return gg;
   }
@@ -3345,10 +3345,66 @@ function renderStEditor(){
       '<p class="note-small" id="stpos' + i + '">' + esc(posText(st)) + '</p></fieldset>';
   }).join("");
 }
-function nearestTown(lat, lon){
+function nearestTown(lat, lon, maxKm){
   var best = null, bd = 1e9;
   PLACES.forEach(function(p){ if (p.kind !== "ville") return; var d = distBrg({lat:lat, lon:lon}, p).d; if (d < bd) { bd = d; best = p; } });
-  return best && bd < 25 ? (best.label || titleCase(best.k)) : "";
+  return best && bd < (maxKm || 5) ? (best.label || titleCase(best.k)) : "";
+}
+
+/* ---------- Noms de communes en ligne (IGN Géoplateforme, puis OpenStreetMap) ---------- */
+var REV_LS = "carnet_lieux_v1", REV = {};
+try { REV = JSON.parse(localStorage.getItem(REV_LS) || "{}") || {}; } catch (e) { REV = {}; }
+function revSave(){ try { var k = Object.keys(REV); if (k.length > 400) k.slice(0, k.length - 400).forEach(function(x){ delete REV[x]; }); localStorage.setItem(REV_LS, JSON.stringify(REV)); } catch (e) {} }
+function fetchTO(u, ms){
+  return Promise.race([fetch(u, {cache:"no-store"}), new Promise(function(_, rej){ setTimeout(function(){ rej(new Error("délai")); }, ms || 7000); })])
+    .then(function(r){ if (!r.ok) throw new Error(r.status); return r.json(); });
+}
+function inFrance(lat, lon){ return lat > 41.2 && lat < 51.2 && lon > -5.3 && lon < 9.7; }
+function revKey(lat, lon, d){ return "r" + lat.toFixed(d || 3) + "," + lon.toFixed(d || 3); }
+/* nom de la commune où l'on se trouve */
+function reverseName(lat, lon){
+  var k = revKey(lat, lon);
+  if (REV[k]) return Promise.resolve(REV[k]);
+  if (navigator.onLine === false) return Promise.reject(new Error("hors ligne"));
+  var ign = inFrance(lat, lon) ? fetchTO("https://data.geopf.fr/geocodage/reverse?lon=" + lon.toFixed(6) + "&lat=" + lat.toFixed(6) + "&index=address&limit=1").then(function(j){
+    var f = j && j.features && j.features[0], pr = f && f.properties, n = pr && (pr.city || pr.municipality);
+    if (!n) throw new Error("vide");
+    return n;
+  }) : Promise.reject(new Error("étranger"));
+  return ign.catch(function(){
+    return fetchTO("https://nominatim.openstreetmap.org/reverse?format=jsonv2&zoom=14&accept-language=fr&lat=" + lat.toFixed(6) + "&lon=" + lon.toFixed(6)).then(function(j){
+      var a = (j && j.address) || {}, n = a.village || a.town || a.city || a.municipality || a.hamlet || a.suburb;
+      if (!n) throw new Error("vide");
+      return n;
+    });
+  }).then(function(n){ REV[k] = n; REV[revKey(lat, lon, 2)] = n; revSave(); return n; });
+}
+/* position d'une commune saisie à la main (village absent de la liste intégrée) */
+function forwardPlace(txt){
+  var k = "f" + norm(txt);
+  if (REV[k]) return Promise.resolve(REV[k]);
+  if (navigator.onLine === false) return Promise.reject(new Error("hors ligne"));
+  return fetchTO("https://data.geopf.fr/geocodage/search?q=" + encodeURIComponent(txt) + "&type=municipality&limit=1").then(function(j){
+    var f = j && j.features && j.features[0];
+    if (!f || !f.geometry) throw new Error("vide");
+    return {lat:f.geometry.coordinates[1], lon:f.geometry.coordinates[0], name:(f.properties && (f.properties.city || f.properties.name)) || txt};
+  }).catch(function(){
+    return fetchTO("https://nominatim.openstreetmap.org/search?format=jsonv2&limit=1&accept-language=fr&q=" + encodeURIComponent(txt)).then(function(j){
+      if (!j || !j[0]) throw new Error("vide");
+      return {lat:+j[0].lat, lon:+j[0].lon, name:(j[0].name || txt)};
+    });
+  }).then(function(r){ REV[k] = r; revSave(); return r; });
+}
+/* nom de la commune pour la position GPS en direct (mis en cache, sans requêtes répétées) */
+var REV_BUSY = {};
+function liveTownName(lat, lon){
+  var k2 = revKey(lat, lon, 2), k3 = revKey(lat, lon);
+  if (REV[k3]) return REV[k3];
+  if (!REV_BUSY[k3] && navigator.onLine !== false) {
+    REV_BUSY[k3] = 1;
+    reverseName(lat, lon).then(function(){ renderStationBar(); updateHomeNote(); }, function(){}).then(function(){ delete REV_BUSY[k3]; });
+  }
+  return REV[k2] || "";
 }
 /* relevé affiné : moyenne de plusieurs positions pendant 25 s maximum */
 function gpsTo(st, done){
@@ -3361,10 +3417,17 @@ function gpsTo(st, done){
     if (!buf.length) { toast("Position introuvable : réessaie près d\u2019une fenêtre ou dehors, ou saisis la ville"); return; }
     var m = gpsMean(buf);
     st.loc = fmtLoc(llToLoc(m.lat, m.lon, locLen(m.acc)));
-    st.qth = nearestTown(m.lat, m.lon) || st.qth || "";
     st.gpsacc = Math.round(m.acc);
-    done();
-    toast("Position ±" + Math.round(m.acc) + " m (" + m.n + " relevés) : " + st.loc);
+    toast("Position ±" + Math.round(m.acc) + " m : recherche du nom de la commune…");
+    reverseName(m.lat, m.lon).then(function(n){
+      st.qth = n;
+      done();
+      toast(n + " – ±" + Math.round(m.acc) + " m (" + m.n + " relevés) – " + st.loc);
+    }, function(){
+      st.qth = nearestTown(m.lat, m.lon, 4) || "";
+      done();
+      toast((st.qth ? st.qth + " – " : "Commune non trouvée (hors connexion ?) – ") + "±" + Math.round(m.acc) + " m – " + st.loc);
+    });
   };
   var tm = setTimeout(finish, 25000);
   toast("Recherche GPS… reste immobile quelques secondes");
@@ -3372,7 +3435,7 @@ function gpsTo(st, done){
     buf = gpsFuse(buf, gpsFix(p));
     var m = gpsMean(buf);
     toast("Affinage : ±" + Math.round(m.acc) + " m, " + m.n + " relevé" + (m.n > 1 ? "s" : ""));
-    if ((m.acc <= 6 && m.n >= 4) || (m.n >= 12 && Date.now() - t0 > 12000)) finish();
+    if ((m.acc <= 6 && m.n >= 4) || (m.acc <= 12 && m.n >= 6) || (m.n >= 10 && Date.now() - t0 > 10000)) finish();
   }, function(e){
     if (e && e.code === 1) { fin = true; clearTimeout(tm); if (wid !== null) navigator.geolocation.clearWatch(wid); toast("Position refusée : autorise la localisation pour ce site, ou saisis la ville"); }
   }, {enableHighAccuracy:true, maximumAge:0, timeout:25000});
@@ -3528,6 +3591,22 @@ $("stList").addEventListener("input", function(e){
 });
 $("stList").addEventListener("change", function(e){
   var el = e.target, i = el.getAttribute("data-i"), k = el.getAttribute("data-k");
+  if (i !== null && k === "qth" && el.tagName === "INPUT") {
+    var stw = STW[+i], txt = el.value.trim();
+    if (!txt) return;
+    var off = geoText(txt);
+    if (!off || off.prec !== "ville") {
+      var pe0 = $("stpos" + i); if (pe0) pe0.textContent = "Recherche de « " + txt + " »…";
+      forwardPlace(txt).then(function(r){
+        var keepLoc = locToLL(stw.loc) && distBrg(locToLL(stw.loc), r).d < 15;
+        if (!keepLoc) stw.loc = fmtLoc(llToLoc(r.lat, r.lon, 8));
+        stw.qth = r.name; el.value = r.name;
+        var lc = document.querySelector('#stList input[data-i="' + i + '"][data-k="loc"]'); if (lc) lc.value = stw.loc;
+        var pe = $("stpos" + i); if (pe) pe.textContent = posText(stw) + (keepLoc ? "" : " Locator calculé depuis le centre de la commune : utilise « Position GPS » sur place pour plus de précision.");
+      }, function(){ var pe = $("stpos" + i); if (pe) pe.textContent = "Commune introuvable (ou hors connexion) : saisis le locator ou utilise « Position GPS »."; });
+    }
+    return;
+  }
   if (i === null || !k || el.tagName !== "SELECT") return;
   STW[+i][k] = el.value;
   var pe = $("stpos" + i); if (pe) pe.textContent = posText(STW[+i]);
