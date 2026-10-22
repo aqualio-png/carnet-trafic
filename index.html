@@ -430,19 +430,22 @@ body{overflow-x:hidden}
 :root[data-theme="dark"]{--sb:#FB923C;--sb-soft:#3A2414}
 .ta,.tb{display:inline-grid;place-items:center;width:1.5em;height:1.5em;border-radius:50%;font-size:.85em;color:#fff;font-weight:700;vertical-align:1px}
 .ta{background:var(--sa)} .tb{background:var(--sb)}
-body.swl .entry{display:flex;flex-direction:column}
-body.swl .entry > *{order:20}
+.entry{display:flex;flex-direction:column}
+.entry > *{order:20}
+body:not(.swl) .grpA{display:contents}
+body:not(.swl) .entry-head{order:1} body:not(.swl) .stationbar{order:2} body:not(.swl) .o-call{order:3} body:not(.swl) .o-band{order:4} body:not(.swl) .o-freq{order:5}
+body:not(.swl) .o-sig{order:6} body:not(.swl) .o-gt{order:7} body:not(.swl) .o-r1{order:8} body:not(.swl) .o-r2{order:9} body:not(.swl) .o-note{order:10}
+body:not(.swl) .o-his{order:11} body:not(.swl) .o-more{order:12} body:not(.swl) .attach{order:13} body:not(.swl) .entry .actions{order:14} body:not(.swl) .hint{order:15}
 body.swl .entry-head{order:1} body.swl .stationbar{order:2} body.swl .o-intro{order:3} body.swl .o-band{order:4} body.swl .o-freq{order:4}
-body.swl .o-call{order:5} body.swl .o-sig{order:6} body.swl .o-gt{order:7} body.swl .o-r1{order:8} body.swl .o-r2{order:9} body.swl .o-his{order:10}
-body.swl .o-B{order:11} body.swl .o-note{order:12} body.swl .o-more{order:13} body.swl .attach{order:14} body.swl .entry .actions{order:15}
-body.swl .sideA:not(.display){border-left:4px solid var(--sa);padding-left:10px;margin-left:0}
-body.swl .o-sig,body.swl .o-r1,body.swl .o-r2{margin-bottom:0;padding-bottom:10px}
-body.swl .o-gt{margin:0;padding-top:4px;padding-bottom:8px;color:var(--sa)}
-body.swl .o-gt::after{display:none}
-body.swl .display.o-call{border-color:var(--sa);border-left-width:4px;margin-bottom:0;border-bottom-left-radius:0}
-body.swl .o-his{margin-top:8px}
+body.swl .grpA{order:5} body.swl .o-B{order:6} body.swl .o-note{order:7} body.swl .o-more{order:8} body.swl .attach{order:9} body.swl .entry .actions{order:10}
+body.swl .grpA{border:1.5px solid var(--sa);border-left-width:4px;border-radius:12px;padding:10px 12px 4px;margin:4px 0 0;background:color-mix(in srgb,var(--accent-soft) 45%,var(--surface))}
+body.swl .grpA .display{background:var(--surface);border-color:color-mix(in srgb,var(--sa) 50%,var(--line))}
+body.swl .grpA .grp-title{color:var(--sa);margin:6px 2px 8px}
+body.swl .grpA .grp-title::after{border-top-color:color-mix(in srgb,var(--sa) 35%,transparent)}
+body.swl .grpA .o-his{margin:4px 0 8px;background:var(--surface)}
+body.swl .swlcard .row:last-child{margin-bottom:10px}
 .swlintro{font-size:.86rem;color:var(--muted);margin:0 0 10px;line-height:1.5}
-.swlcard{border:1.5px solid var(--sb);border-left-width:4px;border-radius:12px;padding:10px 12px 2px;margin:14px 0 12px;background:color-mix(in srgb,var(--sb-soft) 55%,var(--surface))}
+.swlcard{border:1.5px solid var(--sb);border-left-width:4px;border-radius:12px;padding:10px 12px 2px;margin:12px 0 12px;background:color-mix(in srgb,var(--sb-soft) 55%,var(--surface))}
 .swlhead{display:flex;align-items:center;gap:8px;margin-bottom:8px;font-weight:700;color:var(--sb)}
 .swlhead span{flex:1}
 .swlhead .btn{color:var(--ink)}
@@ -465,6 +468,9 @@ body.swl .o-his{margin-top:8px}
 #qslPhotoLbl{margin-bottom:10px}
 .qslgo{margin-left:auto}
 @media (max-width:640px){.qslprev{padding:8px}.qslform .actions{flex-wrap:wrap}.qslform .actions .btn{flex:1 1 auto}}
+.phrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.phrow #qslPhotoLbl{margin:0}
+.tpls.fit{margin:0}
 </style>
 </head>
 <body data-view="entry">
@@ -540,11 +546,6 @@ body.swl .o-his{margin-top:8px}
         </div>
 
         <p class="swlintro swl-only o-intro">Tu écoutes un QSO entre deux stations : note chacune dans sa carte. <b class="ta">①</b> la station entendue, <b class="tb">②</b> son correspondant. Le bouton ⇄ les échange.</p>
-        <div class="display o-call sideA">
-          <label for="fCall"><span class="qso-only">Indicatif contacté (QRZ)</span><span class="swl-only"><b class="ta">①</b> Station entendue</span></label>
-          <input id="fCall" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="send" placeholder="14 TAT 83">
-          <div class="flagline" id="flagline" aria-live="polite"></div>
-        </div>
 
         <div class="row o-band">
           <div class="fld full"><label for="fBandSel">Bande</label><select id="fBandSel"></select></div>
@@ -554,19 +555,44 @@ body.swl .o-his{margin-top:8px}
             <div class="freqwrap"><input id="fFreq" class="mono-in" inputmode="decimal" autocomplete="off" enterkeyhint="send" placeholder="27,555"><span class="band" id="bandTag" hidden></span></div><p class="bandhint" id="bandHint"></p></div>
           <div class="fld"><label for="fMode">Mode</label><select id="fMode"></select></div>
         </div>
-        <div class="row o-sig sideA">
+        <div class="grpA" role="group" aria-label="Station 1">
+        <div class="display o-call">
+          <label for="fCall"><span class="qso-only">Indicatif contacté (QRZ)</span><span class="swl-only"><b class="ta">①</b> Station entendue</span></label>
+          <input id="fCall" autocapitalize="characters" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="send" placeholder="14 TAT 83">
+          <div class="flagline" id="flagline" aria-live="polite"></div>
+        </div>
+
+        <div class="row o-sig">
           <div class="fld qso-only"><label for="fRs">Signal donné</label><input id="fRs" class="mono-in" autocapitalize="characters" enterkeyhint="send"></div>
           <div class="fld"><label for="fRr"><span class="qso-only">Signal reçu</span><span class="swl-only">Report d’écoute de ①</span></label><input id="fRr" class="mono-in" autocapitalize="characters" enterkeyhint="send"></div>
         </div>
 
-        <div class="grp-title o-gt sideA"><span class="qso-only">Correspondant</span><span class="swl-only">Infos de la station ①</span></div>
-        <div class="row o-r1 sideA">
+        <div class="grp-title o-gt"><span class="qso-only">Correspondant</span><span class="swl-only">Infos de la station ①</span></div>
+        <div class="row o-r1">
           <div class="fld"><label for="fName">Prénom</label><input id="fName" autocomplete="off" enterkeyhint="send"></div>
           <div class="fld"><label for="fQth">Ville</label><input id="fQth" autocomplete="off" enterkeyhint="send" placeholder="Ville, dép."></div>
         </div>
-        <div class="row o-r2 sideA">
+        <div class="row o-r2">
           <div class="fld"><label for="fPays">Pays</label><input id="fPays" autocomplete="off" enterkeyhint="send"></div>
           <div class="fld"><label for="fLoc">Locator</label><input id="fLoc" class="mono-in" autocapitalize="characters" autocomplete="off" spellcheck="false" enterkeyhint="send" placeholder="JN25"></div>
+        </div>
+        <details class="more o-his" id="hisBox">
+          <summary><span class="qso-only">Sa station (radio, antenne…)</span><span class="swl-only">Matériel de la station ①</span></summary>
+          <div class="inner">
+            <div class="row">
+              <div class="fld"><label for="fRig">Radio TX</label><input id="fRig" autocomplete="off" enterkeyhint="send"></div>
+              <div class="fld"><label for="fAnt">Antenne</label><input id="fAnt" autocomplete="off" enterkeyhint="send"></div>
+            </div>
+            <div class="row">
+              <div class="fld"><label for="fMic">Micro</label><input id="fMic" autocomplete="off" enterkeyhint="send"></div>
+              <div class="fld"><label for="fOpwr">Sa puissance</label><input id="fOpwr" autocomplete="off" enterkeyhint="send"></div>
+            </div>
+            <div class="row">
+              <div class="fld"><label for="fEmail">Email</label><input id="fEmail" type="email" autocomplete="off" enterkeyhint="send"></div>
+              <div class="fld"><label for="fContest">N° contest</label><input id="fContest" autocomplete="off" enterkeyhint="send"></div>
+            </div>
+          </div>
+        </details>
         </div>
         <section class="swlcard swl-only o-B" aria-label="Station 2, son correspondant">
           <div class="swlhead"><b class="tb">②</b><span>Son correspondant</span>
@@ -591,23 +617,6 @@ body.swl .o-his{margin-top:8px}
         <div class="row o-note">
           <div class="fld full"><label for="fNote">Note</label><input id="fNote" autocomplete="off" enterkeyhint="send"></div>
         </div>
-        <details class="more o-his" id="hisBox">
-          <summary><span class="qso-only">Sa station (radio, antenne…)</span><span class="swl-only">Matériel de la station ①</span></summary>
-          <div class="inner">
-            <div class="row">
-              <div class="fld"><label for="fRig">Radio TX</label><input id="fRig" autocomplete="off" enterkeyhint="send"></div>
-              <div class="fld"><label for="fAnt">Antenne</label><input id="fAnt" autocomplete="off" enterkeyhint="send"></div>
-            </div>
-            <div class="row">
-              <div class="fld"><label for="fMic">Micro</label><input id="fMic" autocomplete="off" enterkeyhint="send"></div>
-              <div class="fld"><label for="fOpwr">Sa puissance</label><input id="fOpwr" autocomplete="off" enterkeyhint="send"></div>
-            </div>
-            <div class="row">
-              <div class="fld"><label for="fEmail">Email</label><input id="fEmail" type="email" autocomplete="off" enterkeyhint="send"></div>
-              <div class="fld"><label for="fContest">N° contest</label><input id="fContest" autocomplete="off" enterkeyhint="send"></div>
-            </div>
-          </div>
-        </details>
         <details class="more o-more" id="moreBox">
           <summary>Date, heure et ma puissance</summary>
           <div class="inner">
@@ -745,7 +754,8 @@ body.swl .o-his{margin-top:8px}
     <div class="qslprev"><canvas id="qslCanvas" width="1400" height="900" aria-label="Aperçu de la carte QSL"></canvas></div>
     <div class="qslform">
       <div class="tpls" id="qslTpls" role="group" aria-label="Modèle de carte"></div>
-      <label class="btn small" id="qslPhotoLbl" for="qslPhoto" hidden>Choisir une photo dans mes dossiers</label>
+      <div class="phrow"><label class="btn small" id="qslPhotoLbl" for="qslPhoto" hidden>Choisir une photo dans mes dossiers</label>
+      <div class="tpls fit" id="qslFit" role="group" aria-label="Cadrage de la photo" hidden><button type="button" class="tplbtn" data-fit="contain">Image entière</button><button type="button" class="tplbtn" data-fit="cover">Remplir la carte</button></div></div>
       <input type="file" id="qslPhoto" accept="image/*" class="sr" tabindex="-1">
       <div class="row" id="qslCapRow" hidden><div class="fld full"><label for="qslCap">Légende de la photo</label><input id="qslCap" autocomplete="off" placeholder="Monts du Lyonnais"></div></div>
       <div class="row">
@@ -3347,7 +3357,7 @@ var QSL_TPLS = [["fourviere","Fourvière au couchant","Lyon – Basilique de Fou
   ["confluence","Confluence","Lyon – Confluence du Rhône et de la Saône"],["radio","Radio","Station radio"],["photo","Ma photo",""]];
 var QSL_PHOTO_LS = "carnet_qsl_photo";
 var QSL = {id:null, photo:null, W:1400, H:900};
-function qslCfg(){ var c = S.settings.qsl || {}; return {tpl:c.tpl || "fourviere", op:c.op || "", msg:c.msg || "Merci pour ce contact radio. 73 et à bientôt sur l\u2019air !", cap:c.cap}; }
+function qslCfg(){ var c = S.settings.qsl || {}; return {tpl:c.tpl || "fourviere", op:c.op || "", msg:c.msg || "Merci pour ce contact radio. 73 et à bientôt sur l\u2019air !", cap:c.cap, fit:c.fit || "contain"}; }
 function qslSaveCfg(patch){ S.settings.qsl = Object.assign(qslCfg(), S.settings.qsl || {}, patch); saveSettingsCloud(); }
 function rndGen(seed){ var x = seed % 2147483647; if (x <= 0) x += 2147483646; return function(){ x = x * 16807 % 2147483647; return (x - 1) / 2147483646; }; }
 function lerp(a, b, t){ return a + (b - a) * t; }
@@ -3503,10 +3513,33 @@ function tplRadio(c, W, H, loc){
   for (var i = 1; i <= 5; i++) { c.globalAlpha = 1 - i * 0.16; c.beginPath(); c.arc(ax, ay - H * 0.55, i * 40, -Math.PI * 0.35, Math.PI * 0.35); c.stroke(); c.beginPath(); c.arc(ax, ay - H * 0.55, i * 40, Math.PI * 0.65, Math.PI * 1.35); c.stroke(); }
   c.globalAlpha = 1;
 }
+function photoBg(im){
+  if (QSL.bgFor === im && QSL.bg) return QSL.bg;
+  var W = QSL.W, H = QSL.H, sm = document.createElement("canvas");
+  sm.width = 40; sm.height = Math.round(40 * H / W);
+  var c = sm.getContext("2d"), s = Math.max(sm.width / im.width, sm.height / im.height);
+  c.drawImage(im, (sm.width - im.width * s) / 2, (sm.height - im.height * s) / 2, im.width * s, im.height * s);
+  QSL.bg = sm; QSL.bgFor = im;
+  return sm;
+}
 function tplPhoto(c, W, H){
   if (!QSL.photo) { tplRadio(c, W, H); c.fillStyle = "rgba(255,255,255,.85)"; c.font = "600 34px Barlow, sans-serif"; c.fillText("Choisis une photo dans tes dossiers", 60, H * 0.5); return; }
-  var im = QSL.photo, s = Math.max(W / im.width, H / im.height), w = im.width * s, h = im.height * s;
-  c.drawImage(im, (W - w) / 2, (H - h) / 2, w, h);
+  var im = QSL.photo, fit = qslCfg().fit || "contain";
+  if (fit === "cover") {
+    var s = Math.max(W / im.width, H / im.height);
+    c.drawImage(im, (W - im.width * s) / 2, (H - im.height * s) / 2, im.width * s, im.height * s);
+    return;
+  }
+  /* image entière : fond flou de la même photo, puis la photo complète, sans rien couper */
+  c.save(); c.imageSmoothingEnabled = true; c.imageSmoothingQuality = "high";
+  c.drawImage(photoBg(im), 0, 0, W, H);
+  c.fillStyle = "rgba(0,0,0,0.28)"; c.fillRect(0, 0, W, H);
+  var sc = Math.min(W / im.width, H / im.height), w = im.width * sc, h = im.height * sc;
+  /* photo verticale : centrée dans la partie gauche, visible à côté du cadre du QSO */
+  var leftW = W * 0.515, x = w <= leftW ? (leftW - w) / 2 + W * 0.01 : (W - w) / 2;
+  c.shadowColor = "rgba(0,0,0,0.45)"; c.shadowBlur = 30;
+  c.drawImage(im, x, (H - h) / 2, w, h);
+  c.restore();
 }
 
 /* mise en page des infos du QSO */
@@ -3617,7 +3650,9 @@ function qslRedraw(){ var q = S.qsos[QSL.id]; if (q) drawQsl($("qslCanvas"), q);
 function qslTplUi(){
   var cfg = qslCfg();
   $("qslTpls").innerHTML = QSL_TPLS.map(function(t){ return '<button type="button" class="tplbtn' + (t[0] === cfg.tpl ? " on" : "") + '" data-tpl="' + t[0] + '" aria-pressed="' + (t[0] === cfg.tpl) + '">' + esc(t[1]) + '</button>'; }).join("");
-  $("qslPhotoLbl").hidden = cfg.tpl !== "photo"; $("qslCapRow").hidden = cfg.tpl !== "photo";
+  var ph = cfg.tpl === "photo";
+  $("qslPhotoLbl").hidden = !ph; $("qslCapRow").hidden = !ph; $("qslFit").hidden = !ph;
+  Array.prototype.forEach.call(document.querySelectorAll("#qslFit [data-fit]"), function(b){ var on = b.getAttribute("data-fit") === (cfg.fit || "contain"); b.classList.toggle("on", on); b.setAttribute("aria-pressed", String(on)); });
   qslRedraw();
 }
 function openQsl(id){
@@ -3628,8 +3663,8 @@ function openQsl(id){
   $("qslTo").value = q.email || "";
   $("qslOp").value = cfg.op; $("qslMsg").value = cfg.msg; $("qslCap").value = cfg.cap || "";
   $("qslTpls").innerHTML = QSL_TPLS.map(function(t){ return '<button type="button" class="tplbtn' + (t[0] === cfg.tpl ? " on" : "") + '" data-tpl="' + t[0] + '" aria-pressed="' + (t[0] === cfg.tpl) + '">' + esc(t[1]) + '</button>'; }).join("");
-  $("qslPhotoLbl").hidden = cfg.tpl !== "photo"; $("qslCapRow").hidden = cfg.tpl !== "photo";
   $("qslSheet").hidden = false;
+  qslTplUi();
   if (!QSL.photo) { try { var d = localStorage.getItem(QSL_PHOTO_LS); if (d) { var im = new Image(); im.onload = function(){ QSL.photo = im; qslRedraw(); }; im.src = d; } } catch (e) {} }
   var go = function(){ qslRedraw(); renderQslInfo(); };
   if (document.fonts && document.fonts.load) Promise.all([document.fonts.load('700 40px "JetBrains Mono"'), document.fonts.load("600 30px Barlow"), document.fonts.load("italic 500 24px Barlow")]).then(go, go); else go();
@@ -3664,12 +3699,14 @@ function qslPickPhoto(file){
   rd.onload = function(){
     var im = new Image();
     im.onload = function(){
-      var cv = document.createElement("canvas"); cv.width = QSL.W; cv.height = QSL.H;
-      var s = Math.max(QSL.W / im.width, QSL.H / im.height), w = im.width * s, h = im.height * s;
-      cv.getContext("2d").drawImage(im, (QSL.W - w) / 2, (QSL.H - h) / 2, w, h);
-      var d = cv.toDataURL("image/jpeg", 0.82);
+      /* photo gardée entière : seulement réduite (2000 px maximum), jamais recadrée */
+      var mx = 2000, s = Math.min(1, mx / Math.max(im.width, im.height));
+      var cv = document.createElement("canvas"); cv.width = Math.round(im.width * s); cv.height = Math.round(im.height * s);
+      cv.getContext("2d").drawImage(im, 0, 0, cv.width, cv.height);
+      var d = cv.toDataURL("image/jpeg", 0.85);
+      if (d.length > 1800000) d = cv.toDataURL("image/jpeg", 0.7);
       try { localStorage.setItem(QSL_PHOTO_LS, d); } catch (e) { toast("Photo utilisée pour cette fois (trop lourde pour être gardée)"); }
-      var im2 = new Image(); im2.onload = function(){ QSL.photo = im2; qslSaveCfg({tpl:"photo"}); qslTplUi(); }; im2.src = d;
+      var im2 = new Image(); im2.onload = function(){ QSL.photo = im2; QSL.bg = null; qslSaveCfg({tpl:"photo"}); qslTplUi(); }; im2.src = d;
     };
     im.onerror = function(){ toast("Image illisible"); };
     im.src = rd.result;
@@ -4108,6 +4145,7 @@ $("qslTpls").addEventListener("click", function(e){
   if (t === "photo" && !QSL.photo) { try { if (!localStorage.getItem(QSL_PHOTO_LS)) $("qslPhoto").click(); } catch (x) {} }
   qslTplUi();
 });
+$("qslFit").addEventListener("click", function(e){ var b = e.target.closest("[data-fit]"); if (!b) return; qslSaveCfg({fit:b.getAttribute("data-fit")}); qslTplUi(); });
 $("qslPhoto").addEventListener("change", function(){ qslPickPhoto(this.files && this.files[0]); this.value = ""; });
 var qslT = null;
 ["qslOp", "qslMsg", "qslCap"].forEach(function(id){ $(id).addEventListener("input", function(){
