@@ -2946,7 +2946,8 @@ var VID = {stream:null, rec:null, cs:null, chunks:[], blob:null, url:"", mime:""
   multiCam:false, raf:0, ov:null, ovT:0, actx:null, an:null, vuData:null, marks:[], size:0, q:"720", torchOk:false, torch:false, wake:null, st:"idle"};
 function vidMime(){
   if (!window.MediaRecorder) return null;
-  var c = ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4", "video/webm;codecs=vp9,opus", "video/webm;codecs=vp8,opus", "video/webm"];
+  var c = ["video/mp4;codecs=avc1.42E01E,mp4a.40.2", "video/mp4;codecs=avc1.4D401F,mp4a.40.2", "video/mp4;codecs=avc1.640028,mp4a.40.2", "video/mp4;codecs=avc1,mp4a.40.2",
+    "video/webm;codecs=vp8,opus", "video/webm;codecs=vp9,opus", "video/webm", "video/mp4"];
   if (typeof MediaRecorder.isTypeSupported !== "function") return "";
   for (var i = 0; i < c.length; i++) if (MediaRecorder.isTypeSupported(c[i])) return c[i];
   return "";
@@ -3225,11 +3226,71 @@ function setBlob(b){
   VID.url = URL.createObjectURL(b);
   var p = $("vidPlay"); p.src = VID.url;
   vidState("done");
+  if (!(b instanceof File)) { vidFinalize(b); return; }
   $("vidNote").textContent = "Vidéo prête (" + (b.size / 1048576).toFixed(1) + " Mo). Enregistre-la avant de fermer : le carnet garde seulement son nom de fichier" + (VID.marks.length ? " et les repères" : "") + ".";
+}
+var MB = null, MB_P = null, MB_VER = "1.61.3";
+function loadMB(){
+  if (MB) return Promise.resolve(MB);
+  if (MB_P) return MB_P;
+  if (typeof VideoEncoder === "undefined" || typeof VideoDecoder === "undefined") return Promise.reject(new Error("WebCodecs indisponible"));
+  var base = "https://cdn.jsdelivr.net/npm/mediabunny@" + MB_VER;
+  MB_P = import(base + "/+esm").then(function(m){ return m; }, function(){
+    return loadScript(base + "/dist/bundles/mediabunny.min.cjs").then(function(){ if (!window.Mediabunny) throw new Error("module"); return window.Mediabunny; }, function(){ throw new Error("outil de conversion non chargé, vérifie la connexion"); });
+  }).then(function(m){ if (!m || !m.Conversion) throw new Error("module incomplet"); MB = m; return m; }, function(e){ MB_P = null; throw e; });
+  return MB_P;
+}
+/* Convertit en MP4 « classique » lisible partout (téléphones, PC, messageries) :
+   copie sans perte si possible, sinon réencodage H.264 + AAC. opts : maxLong (px), vbr (bit/s) */
+function mbConvert(blob, opts, onProg){
+  opts = opts || {};
+  return loadMB().then(function(M){
+    var input = new M.Input({source:new M.BlobSource(blob), formats:M.ALL_FORMATS});
+    var target = new M.BufferTarget();
+    var output = new M.Output({format:new M.Mp4OutputFormat({fastStart:"in-memory"}), target:target});
+    var canA = typeof M.canEncodeAudio === "function" ? M.canEncodeAudio("aac").catch(function(){ return false; }) : Promise.resolve(true);
+    return Promise.all([input.computeDuration().catch(function(){ return 0; }), input.getPrimaryVideoTrack(), canA]).then(function(r){
+      var dur = r[0], vt = r[1], aacOk = r[2];
+      if (!vt) throw new Error("pas d\u2019image dans ce fichier");
+      var dimP = typeof vt.getDisplayWidth === "function" ? Promise.all([vt.getDisplayWidth(), vt.getDisplayHeight()]) : Promise.resolve([vt.displayWidth, vt.displayHeight]);
+      return dimP.then(function(d){
+        var vopt = {codec:"avc"}, aopt = aacOk ? {codec:"aac"} : {};
+        var W = d[0] || 0, H = d[1] || 0;
+        if (opts.maxLong && Math.max(W, H) > opts.maxLong) { if (W >= H) vopt.width = Math.round(opts.maxLong / 2) * 2; else vopt.height = Math.round(opts.maxLong / 2) * 2; }
+        if (opts.vbr) { vopt.quality = M.Quality ? new M.Quality({bitrate:opts.vbr}) : undefined; aopt.quality = M.Quality ? new M.Quality({bitrate:96000}) : undefined; }
+        if (opts.frameRate) vopt.frameRate = opts.frameRate;
+        return M.Conversion.init({input:input, output:output, video:vopt, audio:aopt}).then(function(conv){
+          if (!conv.isValid) throw new Error("format non pris en charge par ce navigateur");
+          conv.onProgress = function(pr){ if (onProg) onProg(pr, dur); };
+          ATT.cancel = function(){ conv.cancel(); };
+          return conv.execute().then(function(){
+            var lostAudio = (conv.discardedTracks || []).some(function(t){ return t.track && t.track.type === "audio"; });
+            return {blob:new Blob([target.buffer], {type:"video/mp4"}), dur:dur, lostAudio:lostAudio, w:W, h:H};
+          });
+        });
+      });
+    });
+  });
+}
+/* fin d'enregistrement : fichier rendu compatible avant d'être proposé à l'enregistrement */
+function vidFinalize(raw){
+  VID.fixing = true; $("vidSave").disabled = true;
+  $("vidNote").textContent = "Finalisation de la vidéo pour qu\u2019elle se lise partout…";
+  mbConvert(raw, {frameRate:/webm/.test(raw.type) ? 30 : 0}, function(p){ $("vidNote").textContent = "Finalisation de la vidéo… " + Math.round(p * 100) + " %"; }).then(function(r){
+    if (!VID.fixing) return;
+    VID.blob = r.blob;
+    if (VID.url) URL.revokeObjectURL(VID.url);
+    VID.url = URL.createObjectURL(r.blob); $("vidPlay").src = VID.url;
+    $("vidNote").textContent = "Vidéo prête : MP4 lisible partout (" + fmtMo(r.blob.size) + (r.dur ? ", " + fmtDur(Math.round(r.dur)) : "") + "). Enregistre-la avant de fermer." + (r.lostAudio ? " Attention : son non converti sur ce navigateur." : "");
+  }, function(e){
+    if (!VID.fixing) return;
+    $("vidNote").textContent = "Vidéo prête (" + fmtMo(raw.size) + "). Conversion de compatibilité indisponible (" + (e && e.message || "erreur") + ") : le fichier pourrait ne pas se lire sur tous les appareils.";
+  }).then(function(){ VID.fixing = false; ATT.cancel = null; $("vidSave").disabled = false; });
 }
 function vidExt(){ var t = (VID.blob && VID.blob.type) || VID.mime || ""; return /mp4/.test(t) ? "mp4" : /quicktime|mov/.test(t) ? "mov" : "webm"; }
 function vidSave(){
   if (!VID.blob) return;
+  if (VID.fixing) { toast("Patiente, la vidéo se finalise…"); return; }
   var l = nowIn(formZone()), ext = vidExt();
   var name = "QSO_" + vidCallName() + "_" + l.date + "-" + l.time + "." + ext;
   var type = VID.blob.type || (ext === "mp4" ? "video/mp4" : "video/webm");
@@ -3246,6 +3307,7 @@ function vidSave(){
   });
 }
 function vidReset(){
+  VID.fixing = false;
   if (VID.url) URL.revokeObjectURL(VID.url);
   VID.blob = null; VID.url = ""; VID.saved = false; VID.marks = [];
   $("vidPlay").removeAttribute("src");
@@ -3711,7 +3773,7 @@ var ATT = {vid:null, vname:"", vorig:null, dur:0, busy:false, cancel:null};
 function fmtMo(n){ return n >= 1048576 ? (n / 1048576).toFixed(1).replace(".", ",") + " Mo" : Math.max(1, Math.round(n / 1024)) + " Ko"; }
 function emailOk(t){ return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(t); }
 function attInit(q){
-  ATT.vid = null; ATT.vorig = null; ATT.vname = ""; ATT.dur = 0;
+  ATT.vid = null; ATT.vorig = null; ATT.vname = ""; ATT.dur = 0; ATT.ok = false; ATT.warnCompat = "";
   if (ATT.cancel) ATT.cancel();
   var mem = q.video && VMEM[q.video];
   if (mem) { ATT.vid = mem; ATT.vorig = mem; ATT.vname = q.video; }
@@ -3719,7 +3781,7 @@ function attInit(q){
   $("attVidTarget").value = "0";
   $("attVidProg").hidden = true;
   attUi(q);
-  if (mem) probeDur(mem).then(function(d){ ATT.dur = d; attUi(q); });
+  if (mem) { ATT.ok = /mp4/.test(mem.type); probeDur(mem).then(function(d){ ATT.dur = d; attUi(q); if (!ATT.ok) attPrepare(0, true); }); }
 }
 function attUi(q){
   q = q || S.qsos[QSL.id];
@@ -3733,10 +3795,11 @@ function attUi(q){
   $("attVidReduce").disabled = !ATT.vid || ATT.busy;
   $("attVidTarget").disabled = !ATT.vid || ATT.busy;
   var tot = qs + (on && ATT.vid ? ATT.vid.size : 0), w = "";
-  if (on && !ATT.vid) w = q && q.video ? "La vidéo n\u2019est plus en mémoire : choisis le fichier " + q.video + " dans tes dossiers." : "Choisis la vidéo à joindre.";
+  if (on && ATT.vid && ATT.warnCompat) w = ATT.warnCompat;
+  else if (on && !ATT.vid) w = q && q.video ? "La vidéo n\u2019est plus en mémoire : choisis le fichier " + q.video + " dans tes dossiers." : "Choisis la vidéo à joindre.";
   else if (tot > 24 * 1048576) w = "Total " + fmtMo(tot) + " : trop lourd pour la plupart des messageries (limite 20 à 25 Mo). Réduis la vidéo.";
   else if (tot > 10 * 1048576) w = "Total " + fmtMo(tot) + " : accepté par Gmail et Outlook (25 Mo), parfois refusé par d\u2019autres messageries.";
-  else if (on) w = "Total " + fmtMo(tot) + ".";
+  else if (on) w = "Total " + fmtMo(tot) + (ATT.ok ? " – vidéo au format MP4 lisible partout." : ".");
   $("attWarn").textContent = w;
   $("attWarn").className = "note-small" + (tot > 24 * 1048576 ? " warnmsg" : "");
 }
@@ -3805,31 +3868,57 @@ function reduceVideo(blob, targetMB, onProg){
   });
   return p;
 }
-function attReduce(){
-  var mb = +$("attVidTarget").value;
-  if (!ATT.vorig) return;
-  if (!mb) { ATT.vid = ATT.vorig; ATT.vname = ATT.vname.replace(/_reduite(\.\w+)$/, "$1"); attUi(); return; }
-  if (ATT.vorig.size <= mb * 1048576 * 1.05) { toast("La vidéo fait déjà moins de " + mb + " Mo"); return; }
+/* prépare la vidéo jointe : MP4 compatible, à la taille demandée (0 = taille d'origine) */
+function attPrepare(mb, auto){
+  if (!ATT.vorig || ATT.busy) return;
+  if (mb && ATT.vorig.size <= mb * 1048576 * 1.05 && ATT.ok) { toast("La vidéo fait déjà moins de " + mb + " Mo"); return; }
   ATT.busy = true; attUi();
   $("attVidProg").hidden = false; $("attVidBar").style.width = "0%";
+  $("attVidTxt").textContent = mb ? "Réduction de la vidéo…" : "Préparation de la vidéo pour qu\u2019elle se lise partout…";
   var wl = null;
   if (navigator.wakeLock && navigator.wakeLock.request) navigator.wakeLock.request("screen").then(function(l){ wl = l; }).catch(function(){});
-  reduceVideo(ATT.vorig, mb, function(f, dur){
+  var base = ATT.vname.replace(/(_reduite|_compatible)?\.\w+$/, "");
+  var t0 = Date.now();
+  var prog = function(f, dur){
     $("attVidBar").style.width = Math.round(f * 100) + "%";
-    $("attVidTxt").textContent = "Réduction " + Math.round(f * 100) + " % – reste " + fmtDur(Math.max(0, Math.round(dur * (1 - f)))) + " (garde l\u2019appli au premier plan)";
+    var el = (Date.now() - t0) / 1000, rest = f > 0.03 ? el / f - el : 0;
+    $("attVidTxt").textContent = (mb ? "Réduction " : "Préparation ") + Math.round(f * 100) + " %" + (rest > 2 ? " – reste environ " + fmtDur(Math.round(rest)) : "");
+  };
+  probeDur(ATT.vorig).then(function(d0){
+    var dur = d0 || ATT.dur || 0;
+    var opts = {};
+    if (mb) {
+      if (!dur) throw new Error("durée de la vidéo illisible");
+      opts.maxLong = mb <= 5 ? 640 : mb <= 10 ? 854 : 1280;
+      opts.vbr = Math.max(200000, Math.floor(mb * 8 * 1048576 * 0.9 / dur) - 96000);
+    }
+    if (/webm/.test(ATT.vorig.type) || /\.webm$/i.test(ATT.vname)) opts.frameRate = 30;
+    return mbConvert(ATT.vorig, opts, prog).catch(function(e){
+      if (e && /annul|cancel/i.test(String(e.name) + String(e.message))) throw new Error("annulé");
+      if (!mb) throw e;
+      /* repli : réenregistrement en temps réel si la conversion directe est indisponible */
+      return reduceVideo(ATT.vorig, mb, prog);
+    });
   }).then(function(r){
     var ext = /mp4/.test(r.blob.type) ? "mp4" : "webm";
-    ATT.vid = r.blob; ATT.dur = r.dur;
-    ATT.vname = ATT.vname.replace(/(_reduite)?\.\w+$/, "") + "_reduite." + ext;
-    toast("Vidéo réduite : " + fmtMo(ATT.vorig.size) + " → " + fmtMo(r.blob.size));
+    ATT.vid = r.blob; ATT.ok = ext === "mp4"; if (r.dur) ATT.dur = r.dur;
+    ATT.warnCompat = ATT.ok ? "" : "Vidéo au format WebM : elle se lit sur Android et PC, mais pas toujours sur iPhone. Connecte-toi pour la convertir en MP4.";
+    ATT.vname = base + (mb ? "_reduite." : ".") + ext;
+    if (mb) toast("Vidéo réduite : " + fmtMo(ATT.vorig.size) + " → " + fmtMo(r.blob.size));
+    else if (!auto) toast("Vidéo prête : MP4 lisible partout");
   }, function(e){
-    if (e && e.message !== "annulé") toast("Réduction impossible : " + e.message);
+    if (e && e.message === "annulé") { ATT.vid = ATT.vorig; return; }
+    ATT.vid = ATT.vorig; ATT.ok = false;
+    if (mb) toast("Réduction impossible : " + (e && e.message || "erreur"));
+    else $("attVidTxt").textContent = "";
+    ATT.warnCompat = mb ? "" : "Préparation impossible sur ce navigateur (" + (e && e.message || "erreur") + ") : la vidéo est jointe telle quelle et pourrait ne pas se lire chez ton correspondant.";
   }).then(function(){
     ATT.busy = false; ATT.cancel = null; $("attVidProg").hidden = true;
     if (wl) { try { wl.release(); } catch (x) {} }
     attUi();
   });
 }
+function attReduce(){ attPrepare(+$("attVidTarget").value, false); }
 function attFiles(q){
   var files = [new File([qslBlob()], qslFileName(q), {type:"image/jpeg"})];
   if ($("attVidOn").checked && ATT.vid) files.push(new File([ATT.vid], ATT.vname || "video.mp4", {type:ATT.vid.type || "video/mp4"}));
@@ -4367,12 +4456,13 @@ $("attVidOn").addEventListener("change", function(){ attUi(); if (this.checked &
 $("attVidFile").addEventListener("change", function(){
   var f = this.files && this.files[0]; this.value = "";
   if (!f) return;
-  ATT.vid = f; ATT.vorig = f; ATT.vname = f.name; ATT.dur = 0; $("attVidOn").checked = true; $("attVidTarget").value = "0";
+  ATT.vid = f; ATT.vorig = f; ATT.vname = f.name; ATT.dur = 0; ATT.ok = false; ATT.warnCompat = ""; $("attVidOn").checked = true; $("attVidTarget").value = "0";
   attUi();
-  probeDur(f).then(function(d){ ATT.dur = d; attUi(); });
+  /* chaque vidéo jointe est d'abord remise au format MP4 standard (rapide si elle l'est déjà presque) */
+  probeDur(f).then(function(d){ ATT.dur = d; attUi(); attPrepare(0, true); });
 });
 $("attVidReduce").addEventListener("click", attReduce);
-$("attVidTarget").addEventListener("change", function(){ if (this.value === "0" && ATT.vorig) { ATT.vid = ATT.vorig; ATT.vname = ATT.vname.replace(/_reduite(\.\w+)$/, "$1"); attUi(); } });
+$("attVidTarget").addEventListener("change", function(){ if (this.value === "0" && ATT.vorig && !ATT.busy) attPrepare(0, false); });
 $("attVidCancel").addEventListener("click", function(){ if (ATT.cancel) ATT.cancel(); });
 $("qslSaveBtn").addEventListener("click", function(){ var q = S.qsos[QSL.id]; if (q) saveAs(qslBlob(), qslFileName(q), "image/jpeg"); });
 $("btnInstall").addEventListener("click", openInstall);
@@ -4436,6 +4526,7 @@ if (!isNarrow()) showTab(TABS_OK[S.ui.tab] ? S.ui.tab : "log");
 if (window.matchMedia) { var mqn = window.matchMedia("(max-width: 999px)"); var onN = function(){ if (!isNarrow()) showTab(TABS_OK[S.ui.tab] ? S.ui.tab : "log"); if (chart) setTimeout(function(){ chart.resize(); }, 60); }; if (mqn.addEventListener) mqn.addEventListener("change", onN); }
 tick(); setInterval(tick, 1000);
 syncGps();
+setTimeout(function(){ if (navigator.onLine !== false) loadMB().catch(function(){}); }, 15000);
 document.addEventListener("visibilitychange", function(){ if (document.hidden) { if (!(VID.rec)) stopGps(true); } else syncGps(); });
 if (!HOME) toggleSettings(true); else if (!isNarrow()) F.fCall.focus();
 initCloud();
