@@ -471,6 +471,22 @@ body.swl .swlcard .row:last-child{margin-bottom:10px}
 .phrow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
 .phrow #qslPhotoLbl{margin:0}
 .tpls.fit{margin:0}
+.attbox{border:1px solid var(--line);border-radius:12px;padding:10px 12px;margin:4px 0 10px;background:var(--sunk)}
+.atth{margin:0 0 6px;font-weight:700;font-size:.9rem}
+.attrow{display:flex;align-items:center;gap:8px;min-height:40px;font-size:.9rem}
+.attrow .an{flex:1;font-weight:600}
+.attrow .switch{flex:1;display:inline-flex;align-items:center;gap:8px;font-weight:600;cursor:pointer;min-width:0}
+.attrow .switch span{overflow:hidden;text-overflow:ellipsis}
+.attrow .switch input{width:20px;height:20px;accent-color:var(--accent);flex:none}
+.attrow .as{font-family:var(--mono);font-size:.8rem;color:var(--muted);white-space:nowrap}
+.attrow .aico{width:20px;text-align:center}
+.attvid{display:flex;flex-wrap:wrap;gap:8px 12px;align-items:center;padding:6px 0 2px 28px}
+.attvid select{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:6px 8px;min-height:38px;font-size:16px}
+.vprog{width:100%;display:flex;flex-wrap:wrap;align-items:center;gap:6px 10px;font-size:.84rem;color:var(--muted)}
+.vprog .bar{flex:1 1 100%;height:8px;background:var(--line2);border-radius:5px;overflow:hidden}
+.vprog .bar i{display:block;height:100%;width:0;background:var(--accent);transition:width .3s}
+#attWarn.warnmsg{margin-top:8px}
+@media (pointer:coarse){#qslEmlBtn{display:none}}
 </style>
 </head>
 <body data-view="entry">
@@ -763,10 +779,29 @@ body.swl .swlcard .row:last-child{margin-bottom:10px}
         <div class="fld"><label for="qslOp">Ton prénom (signature)</label><input id="qslOp" autocomplete="off"></div>
       </div>
       <div class="row"><div class="fld full"><label for="qslMsg">Message</label><input id="qslMsg" autocomplete="off"></div></div>
+      <div class="attbox" id="qslAtt">
+        <p class="atth">Pièces jointes du mail</p>
+        <div class="attrow"><span class="aico">🖼</span><span class="an">Carte QSL</span><span class="as" id="attQslSize"></span></div>
+        <div class="attrow">
+          <label class="switch"><input type="checkbox" id="attVidOn"><span id="attVidName">Joindre une vidéo</span></label>
+          <span class="as" id="attVidSize"></span>
+        </div>
+        <div class="attvid" id="attVidTools" hidden>
+          <label class="btn small" for="attVidFile" id="attVidPick">Choisir la vidéo…</label>
+          <input type="file" id="attVidFile" accept="video/*" class="sr" tabindex="-1">
+          <label class="qsel">Taille <select id="attVidTarget">
+            <option value="0">d’origine</option><option value="20">≈ 20 Mo (bonne qualité)</option><option value="10">≈ 10 Mo</option><option value="5">≈ 5 Mo (légère)</option>
+          </select></label>
+          <button class="btn small" id="attVidReduce">Réduire la vidéo</button>
+          <div class="vprog" id="attVidProg" hidden><div class="bar"><i id="attVidBar"></i></div><span id="attVidTxt"></span><button type="button" class="linkbtn" id="attVidCancel">Annuler</button></div>
+        </div>
+        <p class="note-small" id="attWarn"></p>
+      </div>
       <p class="note-small" id="qslInfo"></p>
       <div class="actions">
-        <button class="btn primary" id="qslSendBtn">Envoyer la QSL par e-mail</button>
-        <button class="btn" id="qslMailBtn">Ouvrir mon mail</button>
+        <button class="btn primary" id="qslSendBtn">Envoyer avec les pièces jointes</button>
+        <button class="btn" id="qslEmlBtn">Brouillon de mail (.eml)</button>
+        <button class="btn" id="qslMailBtn">Mail sans pièce jointe</button>
         <button class="btn" id="qslSaveBtn">Enregistrer l’image</button>
       </div>
     </div>
@@ -3201,6 +3236,7 @@ function vidSave(){
   saveAs(VID.blob, name, type).then(function(saved){
     if (!saved) return;
     VID.saved = true;
+    VMEM[saved] = VID.blob;
     curVideo = saved; showAttach();
     if (VID.marks.length) {
       var tag = "Repères vidéo " + VID.marks.join(", ");
@@ -3646,7 +3682,7 @@ function renderQslInfo(){
   var q = S.qsos[QSL.id], el = $("qslInfo"); if (!q || !el) return;
   el.textContent = q.qsls === "Y" ? "QSL déjà envoyée le " + fDate(q.qslsd) + "." : (q.email ? "" : "Pas d\u2019adresse e-mail pour ce contact : saisis-la ci-dessus, elle sera gardée dans sa fiche.");
 }
-function qslRedraw(){ var q = S.qsos[QSL.id]; if (q) drawQsl($("qslCanvas"), q); }
+function qslRedraw(){ var q = S.qsos[QSL.id]; if (q) { drawQsl($("qslCanvas"), q); if ($("attQslSize")) $("attQslSize").textContent = fmtMo(qslBlob().size); } }
 function qslTplUi(){
   var cfg = qslCfg();
   $("qslTpls").innerHTML = QSL_TPLS.map(function(t){ return '<button type="button" class="tplbtn' + (t[0] === cfg.tpl ? " on" : "") + '" data-tpl="' + t[0] + '" aria-pressed="' + (t[0] === cfg.tpl) + '">' + esc(t[1]) + '</button>'; }).join("");
@@ -3666,32 +3702,201 @@ function openQsl(id){
   $("qslSheet").hidden = false;
   qslTplUi();
   if (!QSL.photo) { try { var d = localStorage.getItem(QSL_PHOTO_LS); if (d) { var im = new Image(); im.onload = function(){ QSL.photo = im; qslRedraw(); }; im.src = d; } } catch (e) {} }
-  var go = function(){ qslRedraw(); renderQslInfo(); };
+  var go = function(){ qslRedraw(); renderQslInfo(); attInit(q); };
   if (document.fonts && document.fonts.load) Promise.all([document.fonts.load('700 40px "JetBrains Mono"'), document.fonts.load("600 30px Barlow"), document.fonts.load("italic 500 24px Barlow")]).then(go, go); else go();
 }
-function qslSend(direct){
-  var q = S.qsos[QSL.id]; if (!q) return;
+/* vidéos enregistrées pendant la session, retrouvées par leur nom de fichier */
+var VMEM = {};
+var ATT = {vid:null, vname:"", vorig:null, dur:0, busy:false, cancel:null};
+function fmtMo(n){ return n >= 1048576 ? (n / 1048576).toFixed(1).replace(".", ",") + " Mo" : Math.max(1, Math.round(n / 1024)) + " Ko"; }
+function emailOk(t){ return /^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(t); }
+function attInit(q){
+  ATT.vid = null; ATT.vorig = null; ATT.vname = ""; ATT.dur = 0;
+  if (ATT.cancel) ATT.cancel();
+  var mem = q.video && VMEM[q.video];
+  if (mem) { ATT.vid = mem; ATT.vorig = mem; ATT.vname = q.video; }
+  $("attVidOn").checked = !!mem;
+  $("attVidTarget").value = "0";
+  $("attVidProg").hidden = true;
+  attUi(q);
+  if (mem) probeDur(mem).then(function(d){ ATT.dur = d; attUi(q); });
+}
+function attUi(q){
+  q = q || S.qsos[QSL.id];
+  var qs = qslBlob().size;
+  $("attQslSize").textContent = fmtMo(qs);
+  var on = $("attVidOn").checked;
+  $("attVidName").textContent = ATT.vid ? "Vidéo : " + ATT.vname : (q && q.video ? "Joindre la vidéo du QSO (" + q.video + ")" : "Joindre une vidéo");
+  $("attVidSize").textContent = ATT.vid ? fmtMo(ATT.vid.size) + (ATT.dur ? ", " + fmtDur(Math.round(ATT.dur)) : "") : "";
+  $("attVidTools").hidden = !on;
+  $("attVidPick").textContent = ATT.vid ? "Choisir une autre vidéo…" : "Choisir la vidéo dans mes dossiers…";
+  $("attVidReduce").disabled = !ATT.vid || ATT.busy;
+  $("attVidTarget").disabled = !ATT.vid || ATT.busy;
+  var tot = qs + (on && ATT.vid ? ATT.vid.size : 0), w = "";
+  if (on && !ATT.vid) w = q && q.video ? "La vidéo n\u2019est plus en mémoire : choisis le fichier " + q.video + " dans tes dossiers." : "Choisis la vidéo à joindre.";
+  else if (tot > 24 * 1048576) w = "Total " + fmtMo(tot) + " : trop lourd pour la plupart des messageries (limite 20 à 25 Mo). Réduis la vidéo.";
+  else if (tot > 10 * 1048576) w = "Total " + fmtMo(tot) + " : accepté par Gmail et Outlook (25 Mo), parfois refusé par d\u2019autres messageries.";
+  else if (on) w = "Total " + fmtMo(tot) + ".";
+  $("attWarn").textContent = w;
+  $("attWarn").className = "note-small" + (tot > 24 * 1048576 ? " warnmsg" : "");
+}
+/* durée d'une vidéo (les fichiers WebM enregistrés n'indiquent pas toujours leur durée) */
+function probeDur(blob){
+  return new Promise(function(res){
+    var v = document.createElement("video"), u = URL.createObjectURL(blob), done = false;
+    var fin = function(d){ if (done) return; done = true; URL.revokeObjectURL(u); res(isFinite(d) && d > 0 ? d : 0); };
+    v.preload = "metadata"; v.muted = true;
+    v.onloadedmetadata = function(){
+      if (isFinite(v.duration) && v.duration > 0) return fin(v.duration);
+      v.ontimeupdate = function(){ v.ontimeupdate = null; fin(v.duration); };
+      try { v.currentTime = 1e7; } catch (e) { fin(0); }
+    };
+    v.onerror = function(){ fin(0); };
+    setTimeout(function(){ fin(0); }, 8000);
+    v.src = u;
+  });
+}
+/* réduction : la vidéo est relue en temps réel, redessinée plus petite et réenregistrée à débit calculé */
+function reduceVideo(blob, targetMB, onProg){
+  var cancelled = false, cleanup = [];
+  var p = probeDur(blob).then(function(dur){
+    if (!dur) throw new Error("Durée de la vidéo illisible");
+    return new Promise(function(res, rej){
+      var u = URL.createObjectURL(blob), v = document.createElement("video");
+      cleanup.push(function(){ try { v.pause(); } catch (e) {} URL.revokeObjectURL(u); });
+      v.src = u; v.playsInline = true; v.preload = "auto"; v.crossOrigin = "anonymous";
+      v.onerror = function(){ rej(new Error("Vidéo illisible par ce navigateur")); };
+      v.onloadedmetadata = function(){
+        var long = targetMB <= 5 ? 640 : targetMB <= 10 ? 854 : 1280;
+        var sc = Math.min(1, long / Math.max(v.videoWidth, v.videoHeight));
+        var cv = document.createElement("canvas");
+        cv.width = Math.max(2, Math.round(v.videoWidth * sc / 2) * 2); cv.height = Math.max(2, Math.round(v.videoHeight * sc / 2) * 2);
+        var c = cv.getContext("2d"), cs = cv.captureStream(25), tracks = cs.getVideoTracks();
+        var AC = window.AudioContext || window.webkitAudioContext, actx = null;
+        try {
+          actx = new AC(); var srcN = actx.createMediaElementSource(v), dst = actx.createMediaStreamDestination(); srcN.connect(dst);
+          tracks = tracks.concat(dst.stream.getAudioTracks());
+          cleanup.push(function(){ try { actx.close(); } catch (e) {} });
+        } catch (e) { v.muted = true; }
+        var vbr = Math.max(180000, Math.floor(targetMB * 8 * 1048576 * 0.9 / dur) - 64000);
+        var mime = vidMime(), rec, chunks = [];
+        try { rec = mime ? new MediaRecorder(new MediaStream(tracks), {mimeType:mime, videoBitsPerSecond:vbr, audioBitsPerSecond:64000}) : new MediaRecorder(new MediaStream(tracks)); }
+        catch (e) { rej(new Error("Réencodage impossible sur ce navigateur")); return; }
+        rec.ondataavailable = function(e){ if (e.data && e.data.size) chunks.push(e.data); };
+        rec.onstop = function(){
+          cleanup.forEach(function(f){ f(); });
+          if (cancelled) { rej(new Error("annulé")); return; }
+          res({blob:new Blob(chunks, {type:(rec.mimeType || mime || "video/webm").split(";")[0]}), dur:dur});
+        };
+        var draw = function(){
+          if (v.ended || cancelled) return;
+          c.drawImage(v, 0, 0, cv.width, cv.height);
+          onProg(Math.min(1, v.currentTime / dur), dur);
+          if (v.requestVideoFrameCallback) v.requestVideoFrameCallback(draw); else requestAnimationFrame(draw);
+        };
+        v.onended = function(){ c.drawImage(v, 0, 0, cv.width, cv.height); setTimeout(function(){ if (rec.state !== "inactive") rec.stop(); }, 300); };
+        cleanup.push(function(){ tracks.forEach(function(t){ t.stop(); }); });
+        rec.start(1000);
+        if (actx && actx.resume) actx.resume();
+        v.play().then(draw, function(){ rej(new Error("Lecture refusée : appuie de nouveau sur Réduire")); });
+        ATT.cancel = function(){ cancelled = true; if (rec.state !== "inactive") rec.stop(); };
+      };
+    });
+  });
+  return p;
+}
+function attReduce(){
+  var mb = +$("attVidTarget").value;
+  if (!ATT.vorig) return;
+  if (!mb) { ATT.vid = ATT.vorig; ATT.vname = ATT.vname.replace(/_reduite(\.\w+)$/, "$1"); attUi(); return; }
+  if (ATT.vorig.size <= mb * 1048576 * 1.05) { toast("La vidéo fait déjà moins de " + mb + " Mo"); return; }
+  ATT.busy = true; attUi();
+  $("attVidProg").hidden = false; $("attVidBar").style.width = "0%";
+  var wl = null;
+  if (navigator.wakeLock && navigator.wakeLock.request) navigator.wakeLock.request("screen").then(function(l){ wl = l; }).catch(function(){});
+  reduceVideo(ATT.vorig, mb, function(f, dur){
+    $("attVidBar").style.width = Math.round(f * 100) + "%";
+    $("attVidTxt").textContent = "Réduction " + Math.round(f * 100) + " % – reste " + fmtDur(Math.max(0, Math.round(dur * (1 - f)))) + " (garde l\u2019appli au premier plan)";
+  }).then(function(r){
+    var ext = /mp4/.test(r.blob.type) ? "mp4" : "webm";
+    ATT.vid = r.blob; ATT.dur = r.dur;
+    ATT.vname = ATT.vname.replace(/(_reduite)?\.\w+$/, "") + "_reduite." + ext;
+    toast("Vidéo réduite : " + fmtMo(ATT.vorig.size) + " → " + fmtMo(r.blob.size));
+  }, function(e){
+    if (e && e.message !== "annulé") toast("Réduction impossible : " + e.message);
+  }).then(function(){
+    ATT.busy = false; ATT.cancel = null; $("attVidProg").hidden = true;
+    if (wl) { try { wl.release(); } catch (x) {} }
+    attUi();
+  });
+}
+function attFiles(q){
+  var files = [new File([qslBlob()], qslFileName(q), {type:"image/jpeg"})];
+  if ($("attVidOn").checked && ATT.vid) files.push(new File([ATT.vid], ATT.vname || "video.mp4", {type:ATT.vid.type || "video/mp4"}));
+  return files;
+}
+function qslPrep(){
+  var q = S.qsos[QSL.id]; if (!q) return null;
   var to = $("qslTo").value.trim();
-  if (to && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(to)) { toast("Adresse e-mail invalide"); $("qslTo").focus(); return; }
+  if (to && !emailOk(to)) { toast("Adresse e-mail invalide"); $("qslTo").focus(); return null; }
   if (to !== (q.email || "")) updQ(q.id, {email:to});
-  var m = qslMail(q), name = qslFileName(q), blob = qslBlob();
-  var coarse = window.matchMedia && window.matchMedia("(pointer:coarse)").matches;
-  var mailto = "mailto:" + encodeURIComponent(to).replace(/%40/g, "@") + "?subject=" + encodeURIComponent(m.subj) + "&body=" + encodeURIComponent(m.body);
-  if (!direct && coarse && navigator.canShare && typeof File === "function") {
-    var f = new File([blob], name, {type:"image/jpeg"});
-    if (navigator.canShare({files:[f]})) {
-      if (to && navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(to).catch(function(){});
-      navigator.share({files:[f], title:m.subj, text:m.body}).then(function(){
-        qslMarkSent(); toast(to ? "Adresse " + to + " copiée : colle-la comme destinataire" : "QSL partagée");
-      }, function(e){ if (!e || e.name !== "AbortError") { window.location.href = mailto; } });
+  if (ATT.busy) { toast("Attends la fin de la réduction de la vidéo"); return null; }
+  if ($("attVidOn").checked && !ATT.vid) { toast("Choisis d\u2019abord la vidéo à joindre, ou décoche-la"); return null; }
+  return {q:q, to:to, m:qslMail(q)};
+}
+/* envoi principal : partage avec pièces jointes (téléphone, tablette, Windows, Mac), sinon brouillon .eml */
+function qslSend(){
+  var o = qslPrep(); if (!o) return;
+  var files = attFiles(o.q);
+  if (navigator.canShare && navigator.share) {
+    var ok = false; try { ok = navigator.canShare({files:files}); } catch (e) {}
+    if (ok) {
+      if (o.to && navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(o.to).catch(function(){});
+      navigator.share({files:files, title:o.m.subj, text:o.m.body}).then(function(){
+        qslMarkSent();
+        toast(o.to ? "Choisis ta messagerie : l\u2019adresse " + o.to + " est copiée, colle-la comme destinataire" : "QSL partagée");
+      }, function(e){ if (!e || e.name !== "AbortError") qslEml(); });
       return;
     }
   }
-  saveAs(blob, name, "image/jpeg").then(function(saved){
-    window.location.href = mailto.replace("&body=", "&body=" + encodeURIComponent("(Carte QSL à joindre : " + (saved || name) + ")\n\n"));
-    qslMarkSent();
-    toast("Mail prêt : joins l\u2019image " + (saved || name) + " qui vient d\u2019être enregistrée");
+  qslEml();
+}
+/* brouillon de mail complet (destinataire, objet, texte, pièces jointes) au format .eml */
+function b64lines(u8){
+  var out = [], CH = 57 * 1024;
+  for (var i = 0; i < u8.length; i += CH) {
+    var sub = u8.subarray(i, Math.min(u8.length, i + CH)), bin = "";
+    for (var k = 0; k < sub.length; k += 8192) bin += String.fromCharCode.apply(null, sub.subarray(k, k + 8192));
+    out.push(btoa(bin).replace(/.{76}/g, "$&\r\n"));
+    out.push("\r\n");
+  }
+  return out;
+}
+function utf8b64(t){ return btoa(unescape(encodeURIComponent(t))); }
+function qslEml(){
+  var o = qslPrep(); if (!o) return;
+  var files = attFiles(o.q), bnd = "=_carnet_" + Date.now().toString(36);
+  var head = "To: " + o.to + "\r\nSubject: =?UTF-8?B?" + utf8b64(o.m.subj) + "?=\r\nX-Unsent: 1\r\nMIME-Version: 1.0\r\nContent-Type: multipart/mixed; boundary=\"" + bnd + "\"\r\n\r\n" +
+    "--" + bnd + "\r\nContent-Type: text/plain; charset=UTF-8\r\nContent-Transfer-Encoding: base64\r\n\r\n" + utf8b64(o.m.body.replace(/\n/g, "\r\n")).replace(/.{76}/g, "$&\r\n") + "\r\n";
+  Promise.all(files.map(function(f){ return f.arrayBuffer ? f.arrayBuffer() : new Response(f).arrayBuffer(); })).then(function(bufs){
+    var parts = [head];
+    files.forEach(function(f, i){
+      parts.push("--" + bnd + "\r\nContent-Type: " + (f.type || "application/octet-stream") + "; name=\"" + f.name + "\"\r\nContent-Disposition: attachment; filename=\"" + f.name + "\"\r\nContent-Transfer-Encoding: base64\r\n\r\n");
+      parts = parts.concat(b64lines(new Uint8Array(bufs[i])));
+    });
+    parts.push("--" + bnd + "--\r\n");
+    var eml = new Blob(parts, {type:"message/rfc822"}), name = qslFileName(o.q).replace(/\.jpg$/, ".eml");
+    return saveAs(eml, name, "message/rfc822").then(function(saved){
+      if (!saved) return;
+      qslMarkSent();
+      toast("Ouvre " + saved + " : le mail s\u2019ouvre dans Outlook, Thunderbird ou Mail, pièces jointes comprises, prêt à envoyer");
+    });
   });
+}
+function qslMailOnly(){
+  var o = qslPrep(); if (!o) return;
+  window.location.href = "mailto:" + encodeURIComponent(o.to).replace(/%40/g, "@") + "?subject=" + encodeURIComponent(o.m.subj) + "&body=" + encodeURIComponent(o.m.body);
+  qslMarkSent();
 }
 function qslPickPhoto(file){
   if (!file) return;
@@ -4136,7 +4341,7 @@ $("fBandSel").addEventListener("change", function(){
   F.fFreq.focus(); try { F.fFreq.select(); } catch (e) {}
 });
 F.fFreq.addEventListener("input", syncBandSelect);
-$("qslClose").addEventListener("click", function(){ $("qslSheet").hidden = true; });
+$("qslClose").addEventListener("click", function(){ if (ATT.cancel) ATT.cancel(); $("qslSheet").hidden = true; });
 $("qslSheet").addEventListener("keydown", function(e){ if (e.key === "Escape") { e.stopPropagation(); $("qslSheet").hidden = true; } });
 $("qslTpls").addEventListener("click", function(e){
   var b = e.target.closest("[data-tpl]"); if (!b) return;
@@ -4155,8 +4360,20 @@ var qslT = null;
   qslRedraw();
   qslT = setTimeout(saveSettingsCloud, 800);
 }); });
-$("qslSendBtn").addEventListener("click", function(){ qslSend(false); });
-$("qslMailBtn").addEventListener("click", function(){ qslSend(true); });
+$("qslSendBtn").addEventListener("click", qslSend);
+$("qslEmlBtn").addEventListener("click", qslEml);
+$("qslMailBtn").addEventListener("click", qslMailOnly);
+$("attVidOn").addEventListener("change", function(){ attUi(); if (this.checked && !ATT.vid) $("attVidFile").click(); });
+$("attVidFile").addEventListener("change", function(){
+  var f = this.files && this.files[0]; this.value = "";
+  if (!f) return;
+  ATT.vid = f; ATT.vorig = f; ATT.vname = f.name; ATT.dur = 0; $("attVidOn").checked = true; $("attVidTarget").value = "0";
+  attUi();
+  probeDur(f).then(function(d){ ATT.dur = d; attUi(); });
+});
+$("attVidReduce").addEventListener("click", attReduce);
+$("attVidTarget").addEventListener("change", function(){ if (this.value === "0" && ATT.vorig) { ATT.vid = ATT.vorig; ATT.vname = ATT.vname.replace(/_reduite(\.\w+)$/, "$1"); attUi(); } });
+$("attVidCancel").addEventListener("click", function(){ if (ATT.cancel) ATT.cancel(); });
 $("qslSaveBtn").addEventListener("click", function(){ var q = S.qsos[QSL.id]; if (q) saveAs(qslBlob(), qslFileName(q), "image/jpeg"); });
 $("btnInstall").addEventListener("click", openInstall);
 $("instClose").addEventListener("click", function(){ $("installSheet").hidden = true; });
